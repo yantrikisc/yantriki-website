@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" width="400" height="420">
+  <defs>
+    <linearGradient id="bgV4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#0c2340"/><stop offset="100%" style="stop-color:#1a3a60"/></linearGradient>
+    <linearGradient id="avBody" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#38bdf8"/><stop offset="50%" style="stop-color:#0284c7"/><stop offset="100%" style="stop-color:#075985"/></linearGradient>
+  </defs>
+  <rect width="400" height="420" fill="url(#bgV4)"/>
+  <!-- Large dome -->
+  <ellipse cx="200" cy="180" rx="85" ry="100" fill="url(#avBody)" stroke="#38bdf8" stroke-width="2"/>
+  <ellipse cx="200" cy="175" rx="68" ry="82" fill="#075985"/>
+  <!-- Small dome on top -->
+  <ellipse cx="200" cy="85" rx="40" ry="50" fill="url(#avBody)" stroke="#38bdf8" stroke-width="2"/>
+  <ellipse cx="200" cy="80" rx="30" ry="38" fill="#075985"/>
+  <!-- Neck connecting domes -->
+  <rect x="178" y="130" width="44" height="40" fill="#0284c7" stroke="#38bdf8" stroke-width="1"/>
+  <!-- Float ball inside -->
+  <circle cx="200" cy="200" r="28" fill="#7dd3fc" opacity="0.6" stroke="#38bdf8" stroke-width="2"/>
+  <!-- Air bubbles -->
+  <circle cx="185" cy="165" r="5" fill="rgba(255,255,255,0.15)"/>
+  <circle cx="210" cy="145" r="7" fill="rgba(255,255,255,0.1)"/>
+  <circle cx="195" cy="130" r="4" fill="rgba(255,255,255,0.12)"/>
+  <!-- Flanged base -->
+  <rect x="155" y="275" width="90" height="30" rx="4" fill="#0284c7" stroke="#38bdf8" stroke-width="1"/>
+  <rect x="130" y="298" width="140" height="20" rx="3" fill="#4b5563"/>
+  <circle cx="145" cy="308" r="4" fill="#1f2937"/>
+  <circle cx="255" cy="308" r="4" fill="#1f2937"/>
+  <!-- Air release arrows -->
+  <line x1="148" y1="100" x2="148" y2="60" stroke="#38bdf8" stroke-width="2" marker-end="url(#arr)"/>
+  <line x1="162" y1="90" x2="162" y2="50" stroke="#38bdf8" stroke-width="2"/>
+  <line x1="176" y1="82" x2="176" y2="42" stroke="#38bdf8" stroke-width="2"/>
+  <text x="155" y="35" font-family="Arial" font-size="9" fill="#38bdf8">AIR RELEASE</text>
+  <text x="200" y="365" font-family="Arial" font-size="14" font-weight="bold" fill="#c8a96e" text-anchor="middle">AIR VALVE</text>
+  <text x="200" y="383" font-family="Arial" font-size="10" fill="#aaa" text-anchor="middle">IS/BS EN/ISO | Single/Double Action/Kinetic</text>
+</svg>

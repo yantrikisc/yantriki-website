@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300">
+  <defs>
+    <linearGradient id="bg15" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#111827"/><stop offset="100%" style="stop-color:#1f2937"/></linearGradient>
+    <linearGradient id="strBody" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#9ca3af"/><stop offset="50%" style="stop-color:#4b5563"/><stop offset="100%" style="stop-color:#1f2937"/></linearGradient>
+  </defs>
+  <rect width="600" height="300" fill="url(#bg15)"/>
+  <!-- Y-type strainer body -->
+  <!-- Main flow pipe -->
+  <rect x="40" y="120" width="400" height="55" rx="6" fill="url(#strBody)"/>
+  <rect x="40" y="123" width="400" height="10" rx="3" fill="rgba(255,255,255,0.1)"/>
+  <!-- Flanges -->
+  <rect x="20" y="108" width="24" height="79" rx="3" fill="#6b7280"/>
+  <circle cx="26" cy="118" r="4" fill="#111827"/><circle cx="26" cy="178" r="4" fill="#111827"/>
+  <rect x="436" y="108" width="24" height="79" rx="3" fill="#6b7280"/>
+  <circle cx="454" cy="118" r="4" fill="#111827"/><circle cx="454" cy="178" r="4" fill="#111827"/>
+  <!-- Strainer Y-branch -->
+  <path d="M 180,175 L 210,250 L 300,250 L 330,175" fill="url(#strBody)" stroke="#6b7280" stroke-width="2"/>
+  <!-- Screen mesh inside Y -->
+  <rect x="218" y="185" width="74" height="58" rx="4" fill="#1f2937" stroke="#9ca3af" stroke-width="1"/>
+  <!-- Mesh lines -->
+  <line x1="230" y1="185" x2="230" y2="243" stroke="#4b5563" stroke-width="1"/>
+  <line x1="242" y1="185" x2="242" y2="243" stroke="#4b5563" stroke-width="1"/>
+  <line x1="254" y1="185" x2="254" y2="243" stroke="#4b5563" stroke-width="1"/>
+  <line x1="266" y1="185" x2="266" y2="243" stroke="#4b5563" stroke-width="1"/>
+  <line x1="278" y1="185" x2="278" y2="243" stroke="#4b5563" stroke-width="1"/>
+  <line x1="218" y1="197" x2="292" y2="197" stroke="#4b5563" stroke-width="1"/>
+  <line x1="218" y1="209" x2="292" y2="209" stroke="#4b5563" stroke-width="1"/>
+  <line x1="218" y1="221" x2="292" y2="221" stroke="#4b5563" stroke-width="1"/>
+  <line x1="218" y1="233" x2="292" y2="233" stroke="#4b5563" stroke-width="1"/>
+  <!-- Drain plug -->
+  <rect x="243" y="248" width="24" height="18" rx="3" fill="#6b7280"/>
+  <!-- Info -->
+  <rect x="500" y="80" width="85" height="140" rx="6" fill="rgba(0,0,0,0.4)"/>
+  <text x="542" y="105" font-family="Arial" font-size="11" font-weight="bold" fill="#c8a96e" text-anchor="middle">Y-TYPE</text>
+  <text x="542" y="121" font-family="Arial" font-size="10" fill="#fff" text-anchor="middle">STRAINER</text>
+  <line x1="508" y1="131" x2="577" y2="131" stroke="#c8a96e" stroke-width="1" opacity="0.5"/>
+  <text x="542" y="148" font-family="Arial" font-size="9" fill="#ccc" text-anchor="middle">CI / DI / SS</text>
+  <text x="542" y="164" font-family="Arial" font-size="9" fill="#ccc" text-anchor="middle">Flanged / BW</text>
+  <text x="542" y="180" font-family="Arial" font-size="9" fill="#ccc" text-anchor="middle">Custom Mesh</text>
+  <text x="300" y="22" font-family="Arial" font-size="14" font-weight="bold" fill="#c8a96e" text-anchor="middle">INDUSTRIAL STRAINERS</text>
+  <text x="300" y="40" font-family="Arial" font-size="10" fill="#aaa" text-anchor="middle">Y-Type · Basket · Duplex · Cone Strainers</text>
+</svg>

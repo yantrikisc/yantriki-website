@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300">
+  <defs>
+    <linearGradient id="bg7" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#111827"/><stop offset="100%" style="stop-color:#1f2937"/></linearGradient>
+    <linearGradient id="hdpeBlack" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#374151"/><stop offset="50%" style="stop-color:#111827"/><stop offset="100%" style="stop-color:#0a0f18"/></linearGradient>
+  </defs>
+  <rect width="600" height="300" fill="url(#bg7)"/>
+  <!-- Coil of HDPE pipe -->
+  <ellipse cx="200" cy="170" rx="140" ry="80" stroke="url(#hdpeBlack)" stroke-width="22" fill="none"/>
+  <ellipse cx="200" cy="170" rx="105" ry="58" stroke="url(#hdpeBlack)" stroke-width="22" fill="none"/>
+  <ellipse cx="200" cy="170" rx="70" ry="38" stroke="url(#hdpeBlack)" stroke-width="20" fill="none"/>
+  <!-- Blue stripes on outer coil -->
+  <ellipse cx="200" cy="147" rx="140" ry="72" stroke="#3b82f6" stroke-width="3" fill="none" stroke-dasharray="15,185"/>
+  <ellipse cx="200" cy="159" rx="140" ry="76" stroke="#3b82f6" stroke-width="3" fill="none" stroke-dasharray="15,185"/>
+  <!-- Straight pipe section -->
+  <rect x="370" y="100" width="200" height="40" rx="6" fill="url(#hdpeBlack)"/>
+  <rect x="370" y="103" width="200" height="6" rx="2" fill="rgba(255,255,255,0.06)"/>
+  <rect x="370" y="112" width="200" height="4" fill="#3b82f6" opacity="0.8"/>
+  <rect x="370" y="125" width="200" height="4" fill="#3b82f6" opacity="0.8"/>
+  <ellipse cx="370" cy="120" rx="10" ry="20" fill="#0a0f18" stroke="#374151" stroke-width="2"/>
+  <ellipse cx="570" cy="120" rx="10" ry="20" fill="#0a0f18" stroke="#374151" stroke-width="2"/>
+  <rect x="370" y="160" width="200" height="40" rx="6" fill="url(#hdpeBlack)"/>
+  <rect x="370" y="173" width="200" height="4" fill="#3b82f6" opacity="0.8"/>
+  <rect x="370" y="186" width="200" height="4" fill="#3b82f6" opacity="0.8"/>
+  <ellipse cx="370" cy="180" rx="10" ry="20" fill="#0a0f18" stroke="#374151" stroke-width="2"/>
+  <ellipse cx="570" cy="180" rx="10" ry="20" fill="#0a0f18" stroke="#374151" stroke-width="2"/>
+  <!-- Labels -->
+  <text x="200" y="275" font-family="Arial" font-size="12" fill="#3b82f6" text-anchor="middle">Coil Form</text>
+  <text x="470" y="220" font-family="Arial" font-size="12" fill="#3b82f6" text-anchor="middle">Straight Lengths</text>
+  <text x="300" y="25" font-family="Arial" font-size="15" font-weight="bold" fill="#c8a96e" text-anchor="middle">HDPE PIPES — PE 80 / PE 100</text>
+  <text x="300" y="45" font-family="Arial" font-size="11" fill="#aaa" text-anchor="middle">Upto 2000mm | Upto PN25 | IS:4984, ISO:4427</text>
+</svg>

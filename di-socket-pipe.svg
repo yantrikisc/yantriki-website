@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300">
+  <defs>
+    <linearGradient id="pipeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a5568"/>
+      <stop offset="40%" style="stop-color:#2d3748"/>
+      <stop offset="100%" style="stop-color:#1a202c"/>
+    </linearGradient>
+    <linearGradient id="socketGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#718096"/>
+      <stop offset="50%" style="stop-color:#2d3748"/>
+      <stop offset="100%" style="stop-color:#1a202c"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0D2B4E"/>
+      <stop offset="100%" style="stop-color:#1a3a5c"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="300" fill="url(#bgGrad)"/>
+  <!-- Pipe 1 -->
+  <rect x="30" y="80" width="340" height="60" rx="4" fill="url(#pipeGrad)"/>
+  <ellipse cx="370" cy="110" rx="18" ry="30" fill="url(#socketGrad)" stroke="#4a5568" stroke-width="2"/>
+  <ellipse cx="30" cy="110" rx="12" ry="30" fill="#2d3748" stroke="#4a5568" stroke-width="2"/>
+  <rect x="355" y="95" width="30" height="30" rx="2" fill="#4a5568"/>
+  <!-- Pipe 2 -->
+  <rect x="30" y="170" width="340" height="60" rx="4" fill="url(#pipeGrad)"/>
+  <ellipse cx="370" cy="200" rx="18" ry="30" fill="url(#socketGrad)" stroke="#4a5568" stroke-width="2"/>
+  <ellipse cx="30" cy="200" rx="12" ry="30" fill="#2d3748" stroke="#4a5568" stroke-width="2"/>
+  <rect x="355" y="185" width="30" height="30" rx="2" fill="#4a5568"/>
+  <!-- Pipe 3 partial -->
+  <rect x="30" y="258" width="340" height="35" rx="4" fill="url(#pipeGrad)"/>
+  <!-- Highlight lines -->
+  <rect x="30" y="83" width="340" height="6" rx="2" fill="rgba(255,255,255,0.08)"/>
+  <rect x="30" y="173" width="340" height="6" rx="2" fill="rgba(255,255,255,0.08)"/>
+  <!-- Labels -->
+  <rect x="420" y="60" width="160" height="180" rx="8" fill="rgba(0,0,0,0.35)"/>
+  <text x="500" y="95" font-family="Arial" font-size="13" font-weight="bold" fill="#c8a96e" text-anchor="middle">DI PIPE</text>
+  <text x="500" y="115" font-family="Arial" font-size="11" fill="#ffffff" text-anchor="middle">Socket &amp; Spigot</text>
+  <line x1="430" y1="128" x2="570" y2="128" stroke="#c8a96e" stroke-width="1" opacity="0.5"/>
+  <text x="500" y="148" font-family="Arial" font-size="10" fill="#aaa" text-anchor="middle">Size: 80–1200 mm</text>
+  <text x="500" y="165" font-family="Arial" font-size="10" fill="#aaa" text-anchor="middle">Class: K7 &amp; K9</text>
+  <text x="500" y="182" font-family="Arial" font-size="10" fill="#aaa" text-anchor="middle">IS: 8329</text>
+  <text x="500" y="215" font-family="Arial" font-size="9" fill="#c8a96e" text-anchor="middle">Push-on Tyton Joint</text>
+</svg>

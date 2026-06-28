@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f2035"/>
+      <stop offset="100%" style="stop-color:#1a3040"/>
+    </linearGradient>
+    <linearGradient id="fitGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5a6475"/>
+      <stop offset="50%" style="stop-color:#2d3748"/>
+      <stop offset="100%" style="stop-color:#1a202c"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="300" fill="url(#bg3)"/>
+  <!-- 90 degree bend -->
+  <path d="M 60,80 L 60,160 Q 60,185 85,185 L 170,185" stroke="#4a5568" stroke-width="28" fill="none" stroke-linecap="round"/>
+  <path d="M 60,80 L 60,160 Q 60,185 85,185 L 170,185" stroke="#718096" stroke-width="20" fill="none" stroke-linecap="round"/>
+  <path d="M 60,80 L 60,160 Q 60,185 85,185 L 170,185" stroke="rgba(255,255,255,0.08)" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <text x="115" y="240" font-family="Arial" font-size="10" fill="#c8a96e" text-anchor="middle">Bend</text>
+  <!-- Tee fitting -->
+  <rect x="220" y="120" width="120" height="26" rx="4" fill="#4a5568"/>
+  <rect x="222" y="122" width="116" height="8" rx="2" fill="#718096"/>
+  <rect x="271" y="80" width="26" height="62" rx="4" fill="#4a5568"/>
+  <rect x="273" y="82" width="8" height="58" rx="2" fill="#718096"/>
+  <text x="280" y="240" font-family="Arial" font-size="10" fill="#c8a96e" text-anchor="middle">Tee</text>
+  <!-- Reducer -->
+  <path d="M 380,110 L 490,125 L 490,175 L 380,190 Z" fill="#4a5568" stroke="#718096" stroke-width="2"/>
+  <path d="M 380,110 L 490,125 L 490,133 L 380,118 Z" fill="rgba(255,255,255,0.08)"/>
+  <ellipse cx="380" cy="150" rx="12" ry="40" fill="#2d3748" stroke="#4a5568" stroke-width="2"/>
+  <ellipse cx="490" cy="150" rx="10" ry="25" fill="#2d3748" stroke="#4a5568" stroke-width="2"/>
+  <text x="435" y="240" font-family="Arial" font-size="10" fill="#c8a96e" text-anchor="middle">Reducer</text>
+  <!-- Title -->
+  <text x="300" y="270" font-family="Arial" font-size="13" font-weight="bold" fill="#c8a96e" text-anchor="middle">DI PUSH-ON JOINT FITTINGS</text>
+  <text x="300" y="286" font-family="Arial" font-size="10" fill="#aaa" text-anchor="middle">IS:9523 | Bends, Tees, Reducers, Caps &amp; More</text>
+</svg>

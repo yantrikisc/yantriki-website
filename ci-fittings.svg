@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300">
+  <defs>
+    <linearGradient id="bg6" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1c2030"/><stop offset="100%" style="stop-color:#252840"/></linearGradient>
+    <linearGradient id="ciFit" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#7a8090"/><stop offset="50%" style="stop-color:#3a4050"/><stop offset="100%" style="stop-color:#1a1f2e"/></linearGradient>
+  </defs>
+  <rect width="600" height="300" fill="url(#bg6)"/>
+  <!-- Elbow -->
+  <path d="M 60,70 L 60,140 Q 60,165 85,165 L 155,165" stroke="#3a4050" stroke-width="34" fill="none" stroke-linecap="round"/>
+  <path d="M 60,70 L 60,140 Q 60,165 85,165 L 155,165" stroke="#6b7280" stroke-width="24" fill="none" stroke-linecap="round"/>
+  <text x="100" y="215" font-family="Arial" font-size="10" fill="#c8a96e" text-anchor="middle">90° Elbow</text>
+  <!-- Tee -->
+  <rect x="200" y="118" width="130" height="30" rx="4" fill="url(#ciFit)"/>
+  <rect x="250" y="70" width="30" height="80" rx="4" fill="url(#ciFit)"/>
+  <text x="265" y="215" font-family="Arial" font-size="10" fill="#c8a96e" text-anchor="middle">Equal Tee</text>
+  <!-- Reducer -->
+  <path d="M 370,100 L 490,118 L 490,162 L 370,180 Z" fill="url(#ciFit)"/>
+  <ellipse cx="370" cy="140" rx="12" ry="40" fill="#2d3040" stroke="#6b7280" stroke-width="2"/>
+  <ellipse cx="490" cy="140" rx="10" ry="22" fill="#2d3040" stroke="#6b7280" stroke-width="2"/>
+  <text x="430" y="215" font-family="Arial" font-size="10" fill="#c8a96e" text-anchor="middle">Reducer</text>
+  <text x="300" y="255" font-family="Arial" font-size="13" font-weight="bold" fill="#c8a96e" text-anchor="middle">CAST IRON FITTINGS</text>
+  <text x="300" y="272" font-family="Arial" font-size="10" fill="#aaa" text-anchor="middle">IS / BS EN Standards | All Sizes Available</text>
+</svg>

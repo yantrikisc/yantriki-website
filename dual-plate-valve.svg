@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" width="400" height="420">
+  <defs>
+    <linearGradient id="bgV5" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#0d1f35"/><stop offset="100%" style="stop-color:#1a3050"/></linearGradient>
+    <linearGradient id="dpBody" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#60a5fa"/><stop offset="50%" style="stop-color:#2563eb"/><stop offset="100%" style="stop-color:#1e3a8a"/></linearGradient>
+  </defs>
+  <rect width="400" height="420" fill="url(#bgV5)"/>
+  <!-- Outer ring -->
+  <circle cx="200" cy="200" r="120" fill="url(#dpBody)" stroke="#60a5fa" stroke-width="3"/>
+  <circle cx="200" cy="200" r="102" fill="#1e3a8a"/>
+  <!-- Two plates (dual plate) -->
+  <rect x="162" y="125" width="30" height="150" rx="6" fill="#60a5fa" stroke="#93c5fd" stroke-width="2" transform="rotate(-8,177,200)"/>
+  <rect x="208" y="125" width="30" height="150" rx="6" fill="#60a5fa" stroke="#93c5fd" stroke-width="2" transform="rotate(8,223,200)"/>
+  <!-- Center pin/hinge -->
+  <circle cx="200" cy="200" r="10" fill="#1d4ed8" stroke="#93c5fd" stroke-width="2"/>
+  <line x1="200" y1="120" x2="200" y2="280" stroke="#93c5fd" stroke-width="4"/>
+  <!-- Spring -->
+  <path d="M 192,170 Q 185,175 192,185 Q 199,195 192,205 Q 185,215 192,225" stroke="#fbbf24" stroke-width="2.5" fill="none"/>
+  <!-- Bolt holes -->
+  <circle cx="110" cy="155" r="8" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2"/>
+  <circle cx="110" cy="245" r="8" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2"/>
+  <circle cx="290" cy="155" r="8" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2"/>
+  <circle cx="290" cy="245" r="8" fill="#1e3a8a" stroke="#60a5fa" stroke-width="2"/>
+  <!-- Wafer profile sides -->
+  <rect x="78" y="150" width="22" height="100" rx="3" fill="#374151" stroke="#60a5fa" stroke-width="1"/>
+  <rect x="300" y="150" width="22" height="100" rx="3" fill="#374151" stroke="#60a5fa" stroke-width="1"/>
+  <text x="200" y="368" font-family="Arial" font-size="13" font-weight="bold" fill="#c8a96e" text-anchor="middle">DUAL PLATE CHECK VALVE</text>
+  <text x="200" y="386" font-family="Arial" font-size="10" fill="#aaa" text-anchor="middle">API 594 | CI / DI | Metal/Soft/Resilient Seated</text>
+</svg>

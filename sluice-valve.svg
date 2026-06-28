@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" width="400" height="420">
+  <defs>
+    <linearGradient id="bgV1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1a2535"/><stop offset="100%" style="stop-color:#0d1520"/></linearGradient>
+    <linearGradient id="valveBody" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6b7280"/><stop offset="50%" style="stop-color:#374151"/><stop offset="100%" style="stop-color:#1f2937"/></linearGradient>
+  </defs>
+  <rect width="400" height="420" fill="url(#bgV1)"/>
+  <!-- Handwheel -->
+  <circle cx="200" cy="60" r="48" stroke="#9ca3af" stroke-width="6" fill="none"/>
+  <circle cx="200" cy="60" r="8" fill="#9ca3af"/>
+  <line x1="200" y1="12" x2="200" y2="108" stroke="#9ca3af" stroke-width="4"/>
+  <line x1="152" y1="60" x2="248" y2="60" stroke="#9ca3af" stroke-width="4"/>
+  <line x1="166" y1="26" x2="234" y2="94" stroke="#9ca3af" stroke-width="3"/>
+  <line x1="234" y1="26" x2="166" y2="94" stroke="#9ca3af" stroke-width="3"/>
+  <!-- Stem -->
+  <rect x="194" y="108" width="12" height="55" fill="#9ca3af"/>
+  <!-- Gland -->
+  <rect x="178" y="160" width="44" height="18" rx="3" fill="url(#valveBody)"/>
+  <!-- Bonnet -->
+  <path d="M 165,178 L 135,230 L 135,310 L 265,310 L 265,230 L 235,178 Z" fill="url(#valveBody)" stroke="#6b7280" stroke-width="2"/>
+  <!-- Body -->
+  <rect x="115" y="305" width="170" height="80" rx="6" fill="url(#valveBody)" stroke="#6b7280" stroke-width="2"/>
+  <!-- Flanges -->
+  <rect x="90" y="315" width="28" height="60" rx="3" fill="#4b5563"/>
+  <circle cx="98" cy="325" r="4" fill="#1f2937"/><circle cx="98" cy="365" r="4" fill="#1f2937"/>
+  <rect x="282" y="315" width="28" height="60" rx="3" fill="#4b5563"/>
+  <circle cx="302" cy="325" r="4" fill="#1f2937"/><circle cx="302" cy="365" r="4" fill="#1f2937"/>
+  <!-- Gate indicator -->
+  <rect x="193" y="232" width="14" height="60" fill="#ef4444" opacity="0.7"/>
+  <!-- Labels -->
+  <text x="200" y="400" font-family="Arial" font-size="14" font-weight="bold" fill="#c8a96e" text-anchor="middle">SLUICE VALVE</text>
+  <text x="200" y="418" font-family="Arial" font-size="10" fill="#aaa" text-anchor="middle">IS:14846 / BS EN | CI / DI | Manual / Gear</text>
+</svg>

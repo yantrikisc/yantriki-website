@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300">
+  <defs>
+    <linearGradient id="bg9" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#0d1520"/><stop offset="100%" style="stop-color:#1a2030"/></linearGradient>
+    <linearGradient id="bwFit" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#374151"/><stop offset="100%" style="stop-color:#0f172a"/></linearGradient>
+  </defs>
+  <rect width="600" height="300" fill="url(#bg9)"/>
+  <!-- BW 45 degree elbow -->
+  <path d="M 50,80 L 50,150 Q 50,175 75,175 L 145,175" stroke="#1f2937" stroke-width="38" fill="none" stroke-linecap="round"/>
+  <path d="M 50,80 L 50,150 Q 50,175 75,175 L 145,175" stroke="url(#bwFit)" stroke-width="28" fill="none" stroke-linecap="round"/>
+  <path d="M 50,80 L 50,150 Q 50,175 75,175 L 145,175" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- Weld bead at ends -->
+  <rect x="42" y="68" width="16" height="14" rx="3" fill="#6b7280"/>
+  <rect x="141" y="168" width="14" height="16" rx="3" fill="#6b7280"/>
+  <text x="88" y="230" font-family="Arial" font-size="9.5" fill="#c8a96e" text-anchor="middle">BW Bend</text>
+
+  <!-- BW Reducer -->
+  <path d="M 200,95 L 320,115 L 320,165 L 200,185 Z" fill="url(#bwFit)" stroke="#374151" stroke-width="2"/>
+  <rect x="186" y="91" width="16" height="98" rx="3" fill="#6b7280"/>
+  <rect x="318" y="111" width="14" height="58" rx="3" fill="#6b7280"/>
+  <ellipse cx="200" cy="140" rx="8" ry="47" fill="#0f172a" stroke="#374151" stroke-width="2"/>
+  <ellipse cx="320" cy="140" rx="8" ry="27" fill="#0f172a" stroke="#374151" stroke-width="2"/>
+  <text x="258" y="230" font-family="Arial" font-size="9.5" fill="#c8a96e" text-anchor="middle">BW Reducer</text>
+
+  <!-- BW End Cap -->
+  <rect x="370" y="110" width="110" height="60" rx="6" fill="url(#bwFit)" stroke="#374151" stroke-width="2"/>
+  <path d="M 480,110 Q 510,140 480,170" stroke="#374151" stroke-width="2" fill="#1f2937"/>
+  <rect x="368" y="107" width="14" height="66" rx="3" fill="#6b7280"/>
+  <text x="430" y="230" font-family="Arial" font-size="9.5" fill="#c8a96e" text-anchor="middle">BW End Cap</text>
+
+  <text x="300" y="262" font-family="Arial" font-size="13" font-weight="bold" fill="#c8a96e" text-anchor="middle">HDPE BUTT WELD FITTINGS</text>
+  <text x="300" y="280" font-family="Arial" font-size="10" fill="#aaa" text-anchor="middle">Bends · Tees · Reducers · Flanges · End Caps | PE 80/100</text>
+</svg>

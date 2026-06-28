@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300">
+  <defs>
+    <linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#0d1b2a"/><stop offset="100%" style="stop-color:#1a2f45"/></linearGradient>
+    <linearGradient id="metal" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#8a9ab0"/><stop offset="50%" style="stop-color:#4a5a6a"/><stop offset="100%" style="stop-color:#2a3a4a"/></linearGradient>
+  </defs>
+  <rect width="600" height="300" fill="url(#bg4)"/>
+  <!-- Flanged Tee -->
+  <rect x="60" y="125" width="200" height="50" rx="3" fill="url(#metal)"/>
+  <!-- Left flange -->
+  <rect x="45" y="110" width="22" height="80" rx="3" fill="url(#metal)"/>
+  <circle cx="50" cy="123" r="4" fill="#1a2a3a"/><circle cx="50" cy="177" r="4" fill="#1a2a3a"/>
+  <!-- Right flange -->
+  <rect x="253" y="110" width="22" height="80" rx="3" fill="url(#metal)"/>
+  <circle cx="270" cy="123" r="4" fill="#1a2a3a"/><circle cx="270" cy="177" r="4" fill="#1a2a3a"/>
+  <!-- Top branch -->
+  <rect x="142" y="55" width="50" height="72" rx="3" fill="url(#metal)"/>
+  <rect x="128" y="42" width="78" height="20" rx="3" fill="url(#metal)"/>
+  <circle cx="135" cy="52" r="4" fill="#1a2a3a"/><circle cx="199" cy="52" r="4" fill="#1a2a3a"/>
+  <text x="167" y="255" font-family="Arial" font-size="10" fill="#c8a96e" text-anchor="middle">Flanged Tee</text>
+  <!-- Flanged Bend right side -->
+  <path d="M 370,80 L 370,155 Q 370,180 395,180 L 480,180" stroke="#4a5a6a" stroke-width="44" fill="none" stroke-linecap="round"/>
+  <path d="M 370,80 L 370,155 Q 370,180 395,180 L 480,180" stroke="url(#metal)" stroke-width="36" fill="none" stroke-linecap="round"/>
+  <!-- Flanges on bend ends -->
+  <rect x="355" y="68" width="30" height="20" rx="3" fill="url(#metal)"/>
+  <circle cx="358" cy="75" r="3" fill="#1a2a3a"/><circle cx="382" cy="75" r="3" fill="#1a2a3a"/>
+  <rect x="470" y="168" width="20" height="28" rx="3" fill="url(#metal)"/>
+  <circle cx="472" cy="172" r="3" fill="#1a2a3a"/><circle cx="472" cy="192" r="3" fill="#1a2a3a"/>
+  <text x="425" y="255" font-family="Arial" font-size="10" fill="#c8a96e" text-anchor="middle">Flanged Bend</text>
+  <text x="300" y="278" font-family="Arial" font-size="13" font-weight="bold" fill="#c8a96e" text-anchor="middle">DI FLANGED / MJ FITTINGS | IS:9523</text>
+</svg>
