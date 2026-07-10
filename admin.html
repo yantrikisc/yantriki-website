@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -348,6 +349,7 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <div class="ni" onclick="go('reports')"><span class="ic">📈</span>Reports</div>
     <div class="ni" onclick="go('po')"><span class="ic">📑</span>Purchase Orders</div>
     <div class="ni" onclick="go('offers')"><span class="ic">📨</span>Offers</div>
+    <div class="ni" onclick="go('history')"><span class="ic">🕘</span>History</div>
     <div class="ni" onclick="go('settings')"><span class="ic">⚙️</span>Settings</div>
   </nav>
   <div class="sb-foot" id="sb-foot">Loading…</div>
@@ -394,6 +396,29 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
       <div class="sc-s" style="color:#888">Unique suppliers</div>
     </div>
   </div>
+  <!-- OFFER STATS ROW -->
+  <div class="sg4" style="margin-bottom:14px">
+    <div class="sc" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff">
+      <div class="sc-l" style="color:#ddd">Total Offered Value</div>
+      <div class="sc-v" id="d-off-total" style="color:#fff">₹0</div>
+      <div class="sc-s" style="color:#eee">All offers</div>
+    </div>
+    <div class="sc" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff">
+      <div class="sc-l" style="color:#ddd">Offers This Month</div>
+      <div class="sc-v" id="d-off-month" style="color:#fff">0</div>
+      <div class="sc-s" style="color:#eee" id="d-off-monthl">—</div>
+    </div>
+    <div class="sc" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff">
+      <div class="sc-l" style="color:#ddd">Orders Finalised</div>
+      <div class="sc-v" id="d-off-final" style="color:#fff">0</div>
+      <div class="sc-s" style="color:#eee">From offers</div>
+    </div>
+    <div class="sc" style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff">
+      <div class="sc-l" style="color:#ddd">Conversion Rate</div>
+      <div class="sc-v" id="d-off-conv" style="color:#fff">0%</div>
+      <div class="sc-s" style="color:#eee">Offer → Order Final</div>
+    </div>
+  </div>
   <div class="sg2">
     <div class="card">
       <div class="ch"><h3>Recent Invoices</h3><button class="btn bo bsm" onclick="go('invoices')">View all →</button></div>
@@ -402,6 +427,10 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <div class="card">
       <div class="ch"><h3>Recent Purchase Orders</h3><button class="btn bo bsm" onclick="go('po')">View all →</button></div>
       <div class="tw"><table><thead><tr><th>PO No.</th><th>Supplier</th><th>Date</th><th>Total</th><th>Actions</th></tr></thead><tbody id="dash-po-tb"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="ch"><h3>Recent Offers</h3><button class="btn bo bsm" onclick="go('offers')">View all →</button></div>
+      <div class="tw"><table><thead><tr><th>Ref</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody id="dash-off-tb"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -571,6 +600,18 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
 <div id="page-offers" class="page">
   <div class="card"><div class="ch"><h3>📨 Offers / Quotations</h3><button class="btn bp bsm" onclick="openNewOffer()">＋ New Offer</button></div>
     <div class="tw"><table><thead><tr><th>Ref</th><th>Date</th><th>Customer</th><th>Project</th><th>Total</th><th>Valid Till</th><th>Status</th><th>Actions</th></tr></thead><tbody id="offer-tb"></tbody></table></div>
+  </div>
+</div>
+
+<div id="page-history" class="page">
+  <div class="card"><div class="ch">
+      <h3>🕘 Activity History</h3>
+      <div style="display:flex;gap:8px">
+        <span style="font-size:11px;color:var(--sl);align-self:center">Auto-deletes entries older than 7 days</span>
+        <button class="btn bo bsm" onclick="downloadHistory()">⬇ Download</button>
+      </div>
+    </div>
+    <div class="tw"><table><thead><tr><th>Date &amp; Time</th><th>Action</th><th>Entity</th><th>Details</th><th>By</th></tr></thead><tbody id="history-tb"></tbody></table></div>
   </div>
 </div>
 
@@ -1054,20 +1095,34 @@ window.applyRoleUI=function(role){
   USER_ROLE=role;
   const settingsNav=document.querySelector('.ni[onclick="go(\'settings\')"]');
   if(settingsNav)settingsNav.style.display=isStaff()?'none':'';
+  const historyNav=document.querySelector('.ni[onclick="go(\'history\')"]');
+  if(historyNav)historyNav.style.display=isStaff()?'none':'';
   ['f-usestamp','po-usestamp','offer-usestamp'].forEach(lockStampCheckbox);
   if(typeof renderAll==='function')renderAll();
 };
 let S={
-  invoices:[],products:[],customers:[],advances:[],payments:[],purchaseOrders:[],suppliers:[],offers:[],
+  invoices:[],products:[],customers:[],advances:[],payments:[],purchaseOrders:[],suppliers:[],offers:[],history:[],
   nextN:1,nextAdv:1,nextPay:1,nextCust:1,nextPO:1,nextOffer:1,
   eInvId:null,eProdId:null,eCustId:null,eAdvId:null,ePayId:null,ePOId:null,eOfferId:null,
   curPrev:null,curPOPrev:null,curOfferPrev:null,fStat:'all',fTxt:'',rP:'monthly',
   cfg:{name:'Yantriki Suppliers and Consultancy',gst:'23AADFY9269N1ZD',pan:'AADFY9269N',phone:'8815184776',email:'info@yantrikisc.in',a1:'Plot No. 347, Mandakini Kolar Road',a2:'Bhopal (MP) 462042',juris:'Bhopal',bank:'',aname:'',acno:'',ifsc:'',branch:'',actype:'Current',upi:'',prefix:'YSC',gsttype:'intrastate',sign:'Authorised Signatory',terms:30,footer:'Delivery:- Freight Charges FREE ON ROAD',poprefix:'YSC-PO',potaxtype:'igst',potaxpct:18,posign:'Authorised Signatory',podel:'',popt:'',pobill:'',ponotes:'',offerprefix:'YSC-OFR',offersign:'Authorised Signatory',offerfontsize:'11',offerpricenote:'The below quoted prices are inclusive of GST@18%, Transportation to site and Insurance.',offernotes:'Looking forward for your valuable order.',stampInv:false,stampPO:false,stampOffer:true}
 };
 
+// ── ACTIVITY HISTORY (auto-purges after 7 days) ──
+const HISTORY_DAYS=7;
+function pruneHistory(){
+  const cutoff=Date.now()-HISTORY_DAYS*24*60*60*1000;
+  S.history=(S.history||[]).filter(h=>h.ts>=cutoff);
+}
+function logHistory(action,entity,detail){
+  if(!S.history)S.history=[];
+  S.history.push({ts:Date.now(),action,entity,detail:detail||'',role:(typeof USER_ROLE!=='undefined'&&USER_ROLE)?USER_ROLE:'admin'});
+  pruneHistory();
+}
+
 // ── STORAGE ──
-function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,cfg:S.cfg});}
-function applyData(raw){try{const p=JSON.parse(raw);S.invoices=p.invoices||[];S.products=p.products||[];S.customers=p.customers||[];S.advances=p.advances||[];S.payments=p.payments||[];S.purchaseOrders=p.purchaseOrders||[];S.suppliers=p.suppliers||[];S.offers=p.offers||[];S.nextN=p.nextN||1;S.nextAdv=p.nextAdv||1;S.nextPay=p.nextPay||1;S.nextCust=p.nextCust||1;S.nextPO=p.nextPO||1;S.nextOffer=p.nextOffer||1;S.cfg=Object.assign({},S.cfg,p.cfg||{});backfillCustIds();return true;}catch(e){return false;}}
+function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,history:S.history,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,cfg:S.cfg});}
+function applyData(raw){try{const p=JSON.parse(raw);S.invoices=p.invoices||[];S.products=p.products||[];S.customers=p.customers||[];S.advances=p.advances||[];S.payments=p.payments||[];S.purchaseOrders=p.purchaseOrders||[];S.suppliers=p.suppliers||[];S.offers=p.offers||[];S.history=p.history||[];pruneHistory();S.nextN=p.nextN||1;S.nextAdv=p.nextAdv||1;S.nextPay=p.nextPay||1;S.nextCust=p.nextCust||1;S.nextPO=p.nextPO||1;S.nextOffer=p.nextOffer||1;S.cfg=Object.assign({},S.cfg,p.cfg||{});backfillCustIds();return true;}catch(e){return false;}}
 async function persist(){
   const d=payload();
   try{localStorage.setItem(STORE_KEY,d);}catch(e){}
@@ -1106,7 +1161,7 @@ function doReset(){
   // Reset all data, keep settings/cfg intact
   setTimeout(()=>{
     S.invoices=[];S.products=[];S.customers=[];S.advances=[];S.payments=[];
-    S.purchaseOrders=[];S.suppliers=[];S.offers=[];
+    S.purchaseOrders=[];S.suppliers=[];S.offers=[];S.history=[];
     S.nextN=1;S.nextAdv=1;S.nextPay=1;S.nextCust=1;S.nextPO=1;S.nextOffer=1;
     S.eInvId=null;S.eProdId=null;S.eCustId=null;S.eAdvId=null;S.ePayId=null;S.ePOId=null;S.eSupId=null;S.eOfferId=null;
     S.curPrev=null;S.curPOPrev=null;S.curOfferPrev=null;S.fStat='all';S.fTxt='';
@@ -1163,8 +1218,8 @@ function custByAny(val){
 }
 
 // ── NAVIGATION ──
-const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','offers','settings'];
-const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',offers:'Offers',settings:'Settings'};
+const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','offers','history','settings'];
+const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',offers:'Offers',history:'Activity History',settings:'Settings'};
 const TOP_BTN_MAP={
   dashboard:null, invoices:['＋ New Invoice','openNewInv'],
   advances:['＋ Record Advance','openAdvM'], payments:['＋ Record Payment','openPayM'],
@@ -1175,7 +1230,7 @@ const TOP_BTN_MAP={
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open');}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
 function go(p){
-  if(p==='settings'&&isStaff()){toast('⚠ Settings are restricted for your account');p='dashboard';}
+  if((p==='settings'||p==='history')&&isStaff()){toast('⚠ Restricted for your account');p='dashboard';}
   closeSidebar();
   PAGES.forEach(x=>{const el=document.getElementById('page-'+x);if(el)el.classList.remove('active');});
   document.querySelectorAll('.ni').forEach(el=>el.classList.remove('active'));
@@ -1196,6 +1251,7 @@ function go(p){
   } else { tb.style.display='none'; }
   if(p==='settings')loadSett();
   if(p==='reports')renderReports();
+  if(p==='history')renderHistory();
   renderAll();
 }
 document.getElementById('top-btn').addEventListener('click',function(){
@@ -1320,6 +1376,7 @@ function saveSett(){
   const oeb=document.getElementById('s-offeremailbody');if(oeb)S.cfg.offeremailbody=oeb.value;
   const ifz=document.getElementById('s-invfontsize');if(ifz)S.cfg.invfontsize=ifz.value;
   const pfz=document.getElementById('s-pofontsize');if(pfz)S.cfg.pofontsize=pfz.value;
+  logHistory('Edited','Settings','Company/document defaults updated');
   persist();updSidebar();toast('Settings saved ✓');
 }
 function updSidebar(){document.getElementById('sb-n').textContent=(S.cfg.name||'Yantriki').split(' ')[0];document.getElementById('sb-foot').innerHTML='GST: '+(S.cfg.gst||'—')+'<br>PAN: '+(S.cfg.pan||'—')+'<br>'+(S.cfg.a2||'');}
@@ -1559,11 +1616,13 @@ function saveInv(type){
     priceIncGst,
     items,taxT,discT,cgstT,sgstT,igstT,grand
   };
+  const isNew=!S.eInvId;
   if(S.eInvId){const i=S.invoices.findIndex(x=>x.id===S.eInvId);S.invoices[i]=inv;}
   else{S.invoices.unshift(inv);S.nextN++;}
   upsertCust({name:bname,gst:inv.bgst,phone:inv.bph,email:inv.bem,addr:inv.baddr});
   const savedCust=S.customers.find(x=>x.name===bname);
   if(savedCust)inv.bcustid=savedCust.custId||inv.bcustid;
+  logHistory(isNew?'Created':'Edited','Invoice',num+' — '+bname);
   persist();closeM('inv-modal');renderAll();toast('Invoice saved ✓');
 }
 function upsertCust(d){
@@ -1572,8 +1631,8 @@ function upsertCust(d){
   if(!c){S.customers.push({id:uid(),custId:newCustId(),projects:[],...d});}
   else{if(!c.gst&&d.gst)c.gst=d.gst;if(!c.phone&&d.phone)c.phone=d.phone;if(!c.email&&d.email)c.email=d.email;if(!c.addr&&d.addr)c.addr=d.addr;if(!c.custId)c.custId=newCustId();if(!Array.isArray(c.projects))c.projects=[];}
 }
-function delInv(id){if(blockIfStaff('⚠ Deleting invoices is restricted for your account'))return;if(!confirm('Delete invoice?'))return;S.invoices=S.invoices.filter(i=>i.id!==id);persist();renderAll();toast('Deleted');}
-function chStat(id,val){if(!val)return;const inv=S.invoices.find(i=>i.id===id);if(inv){inv.status=val;persist();renderAll();toast('Updated');}}
+function delInv(id){if(blockIfStaff('⚠ Deleting invoices is restricted for your account'))return;if(!confirm('Delete invoice?'))return;const inv=S.invoices.find(i=>i.id===id);S.invoices=S.invoices.filter(i=>i.id!==id);logHistory('Deleted','Invoice',inv?inv.number+' — '+inv.bname:id);persist();renderAll();toast('Deleted');}
+function chStat(id,val){if(!val)return;const inv=S.invoices.find(i=>i.id===id);if(inv){inv.status=val;logHistory('Status Change','Invoice',inv.number+' → '+val);persist();renderAll();toast('Updated');}}
 
 // ── ADVANCES ──
 function openAdvM(id){
@@ -1599,7 +1658,7 @@ function saveAdv(){
   else{S.advances.push(adv);S.nextAdv++;}
   persist();closeM('adv-modal');renderAll();toast('Advance saved ✓');
 }
-function delAdv(id){if(!confirm('Delete?'))return;S.advances=S.advances.filter(a=>a.id!==id);persist();renderAll();toast('Deleted');}
+function delAdv(id){if(!confirm('Delete?'))return;const a=S.advances.find(x=>x.id===id);S.advances=S.advances.filter(a=>a.id!==id);logHistory('Deleted','Advance',a?a.ref+' — '+a.cust:id);persist();renderAll();toast('Deleted');}
 
 // ── PAYMENTS ──
 function openPayM(id,prefInv){
@@ -1642,7 +1701,7 @@ function savePay(){
   if(invNum){const inv=S.invoices.find(i=>i.number===invNum);if(inv){const bal=invBal(inv);inv.status=bal<=0?'paid':'partial';}}
   persist();closeM('pay-modal');renderAll();toast('Payment saved ✓');
 }
-function delPay(id){if(!confirm('Delete?'))return;S.payments=S.payments.filter(p=>p.id!==id);persist();renderAll();toast('Deleted');}
+function delPay(id){if(!confirm('Delete?'))return;const p=S.payments.find(x=>x.id===id);S.payments=S.payments.filter(p=>p.id!==id);logHistory('Deleted','Payment',p?p.ref+' — '+p.cust:id);persist();renderAll();toast('Deleted');}
 
 // ── PRODUCTS ──
 function openProdM(id){
@@ -1653,7 +1712,7 @@ function openProdM(id){
   openM('prod-modal');
 }
 function saveProd(){const name=document.getElementById('pm-n').value.trim();if(!name){toast('Enter name');return;}const p={id:S.eProdId||uid(),name,hsn:document.getElementById('pm-h').value,unit:document.getElementById('pm-u').value,rate:V(document.getElementById('pm-r').value),gst:V(document.getElementById('pm-g').value)};if(S.eProdId){const i=S.products.findIndex(x=>x.id===S.eProdId);S.products[i]=p;}else S.products.push(p);persist();closeM('prod-modal');renderAll();toast('Saved ✓');}
-function delProd(id){if(!confirm('Delete?'))return;S.products=S.products.filter(p=>p.id!==id);persist();renderAll();toast('Deleted');}
+function delProd(id){if(!confirm('Delete?'))return;const p=S.products.find(x=>x.id===id);S.products=S.products.filter(p=>p.id!==id);logHistory('Deleted','Product',p?p.name:id);persist();renderAll();toast('Deleted');}
 
 // ── CUSTOMERS ──
 function openCustM(id){
@@ -1721,10 +1780,12 @@ function saveCust(){
     addr:document.getElementById('cm-a').value,
     projects
   };
+  const isNewCust=!S.eCustId;
   if(S.eCustId){const i=S.customers.findIndex(x=>x.id===S.eCustId);S.customers[i]=c;}else S.customers.push(c);
+  logHistory(isNewCust?'Created':'Edited','Customer',name);
   persist();closeM('cust-modal');renderAll();toast('Saved ✓');
 }
-function delCust(id){if(!confirm('Delete?'))return;S.customers=S.customers.filter(c=>c.id!==id);persist();renderAll();toast('Deleted');}
+function delCust(id){if(!confirm('Delete?'))return;const c=S.customers.find(x=>x.id===id);S.customers=S.customers.filter(c=>c.id!==id);logHistory('Deleted','Customer',c?c.name:id);persist();renderAll();toast('Deleted');}
 
 // ── CUSTOMER DETAIL VIEW ──
 function setCustTab(tab,el){
@@ -1745,6 +1806,7 @@ function renderCustDetail(name){
   const custInvs=S.invoices.filter(i=>i.bname===name);
   const custAdvs=S.advances.filter(a=>a.cust===name);
   const custPays=S.payments.filter(p=>p.cust===name);
+  const custOffers=(S.offers||[]).filter(o=>o.custName===name);
   const totalBilled=custInvs.filter(i=>i.status!=='draft').reduce((s,i)=>s+V(i.grand),0);
   const totalAdv=custAdvs.reduce((s,a)=>s+V(a.amt),0);
   const totalPaid=custPays.reduce((s,p)=>s+V(p.amt),0);
@@ -1779,8 +1841,15 @@ function renderCustDetail(name){
     (custAdvs.length?custAdvs.map(a=>'<tr><td>'+esc(a.ref)+'</td><td>'+DF(a.date)+'</td><td>'+esc(a.invNum||'—')+'</td><td style="font-weight:700">'+F(a.amt)+'</td><td>'+esc(a.mode)+'</td></tr>').join(''):'<tr><td colspan="5"><div class="empty"><p>No advances</p></div></td></tr>')+
     '</tbody></table></div>'+
     '<div class="sl">Payments ('+custPays.length+')</div>'+
-    '<div class="tw"><table><thead><tr><th>Ref</th><th>Date</th><th>Invoice</th><th>Amount</th><th>Mode</th><th>Reference</th></tr></thead><tbody>'+
+    '<div class="tw" style="margin-bottom:14px"><table><thead><tr><th>Ref</th><th>Date</th><th>Invoice</th><th>Amount</th><th>Mode</th><th>Reference</th></tr></thead><tbody>'+
     (custPays.length?custPays.map(p=>'<tr><td>'+esc(p.ref)+'</td><td>'+DF(p.date)+'</td><td>'+esc(p.invNum||'—')+'</td><td style="font-weight:700">'+F(p.amt)+'</td><td>'+esc(p.mode)+'</td><td>'+esc(p.ref2||'—')+'</td></tr>').join(''):'<tr><td colspan="6"><div class="empty"><p>No payments</p></div></td></tr>')+
+    '</tbody></table></div>'+
+    '<div class="sl">Offers Submitted &amp; Orders Finalised ('+custOffers.length+')</div>'+
+    '<div class="tw"><table><thead><tr><th>Offer Ref</th><th>Date</th><th>Project</th><th>Total</th><th>Status</th><th>Action</th></tr></thead><tbody>'+
+    (custOffers.length?custOffers.map(o=>{
+      const st=o.status||'submitted';
+      return '<tr><td style="font-weight:700;color:var(--rust)">'+esc(o.offerNo)+'</td><td>'+DF(o.date)+'</td><td>'+esc(o.project||'—')+'</td><td style="font-weight:700">'+F(o.total)+'</td><td><span class="badge b'+st+'">'+st.replace('_',' ')+'</span></td><td><button class="btn bg bsm" onclick="prevOffer(\''+o.id+'\')">👁 View</button></td></tr>';
+    }).join(''):'<tr><td colspan="6"><div class="empty"><p>No offers yet</p></div></td></tr>')+
     '</tbody></table></div>';
 }
 
@@ -2264,7 +2333,7 @@ function saveSupM(){
   }
   persist();renderSupTbl();refreshSupDL();closeM('sup-modal');toast('✓ Supplier saved');
 }
-function delSup(id){if(!confirm('Delete this supplier?'))return;S.suppliers=S.suppliers.filter(s=>s.id!==id);persist();renderSupTbl();refreshSupDL();toast('Deleted');}
+function delSup(id){if(!confirm('Delete this supplier?'))return;const s=S.suppliers.find(x=>x.id===id);S.suppliers=S.suppliers.filter(s=>s.id!==id);logHistory('Deleted','Supplier',s?s.name:id);persist();renderSupTbl();refreshSupDL();toast('Deleted');}
 
 // ── SUPPLIER HELPERS ──
 function upsertSupplier(d){
@@ -2431,11 +2500,13 @@ function savePO(){
     contactDet:document.getElementById('po-contactdet').value,extraNotes:document.getElementById('po-extranotes').value,redNotes:document.getElementById('po-rednotes').value,
     useStamp:document.getElementById('po-usestamp').checked
   };
+  const isNewPO=!S.ePOId;
   if(S.ePOId){const idx=S.purchaseOrders.findIndex(p=>p.id===S.ePOId);S.purchaseOrders[idx]=po;}
   else{S.purchaseOrders.push(po);S.nextPO++;}
+  logHistory(isNewPO?'Created':'Edited','Purchase Order',po.poNo+' — '+supName);
   persist();renderPOTbl();closeM('po-modal');toast('✓ Purchase Order saved');
 }
-function delPO(id){if(blockIfStaff('⚠ Deleting purchase orders is restricted for your account'))return;if(!confirm('Delete this purchase order?'))return;S.purchaseOrders=S.purchaseOrders.filter(p=>p.id!==id);persist();renderPOTbl();toast('Deleted');}
+function delPO(id){if(blockIfStaff('⚠ Deleting purchase orders is restricted for your account'))return;if(!confirm('Delete this purchase order?'))return;const po=S.purchaseOrders.find(p=>p.id===id);S.purchaseOrders=S.purchaseOrders.filter(p=>p.id!==id);logHistory('Deleted','Purchase Order',po?po.poNo+' — '+po.supName:id);persist();renderPOTbl();toast('Deleted');}
 function renderPOTbl(){
   const tb=document.getElementById('po-tb');if(!tb)return;
   tb.innerHTML=(S.purchaseOrders||[]).slice().reverse().map(po=>
@@ -2743,11 +2814,13 @@ function saveOffer(){
     useStamp:document.getElementById('offer-usestamp').checked,
     status:(existing&&existing.status)||'submitted'
   };
+  const isNewOffer=!S.eOfferId;
   if(S.eOfferId){const idx=S.offers.findIndex(o=>o.id===S.eOfferId);S.offers[idx]=offer;}
   else{S.offers.push(offer);S.nextOffer++;}
+  logHistory(isNewOffer?'Created':'Edited','Offer',offer.offerNo+' — '+custName);
   persist();renderOfferTbl();closeM('offer-modal');toast('✓ Offer saved');
 }
-function delOffer(id){if(blockIfStaff('⚠ Deleting offers is restricted for your account'))return;if(!confirm('Delete this offer?'))return;S.offers=S.offers.filter(o=>o.id!==id);persist();renderOfferTbl();toast('Deleted');}
+function delOffer(id){if(blockIfStaff('⚠ Deleting offers is restricted for your account'))return;if(!confirm('Delete this offer?'))return;const o=S.offers.find(x=>x.id===id);S.offers=S.offers.filter(o=>o.id!==id);logHistory('Deleted','Offer',o?o.offerNo+' — '+o.custName:id);persist();renderOfferTbl();toast('Deleted');}
 function renderOfferTbl(){
   const tb=document.getElementById('offer-tb');if(!tb)return;
   tb.innerHTML=(S.offers||[]).slice().reverse().map(o=>{
@@ -2757,7 +2830,39 @@ function renderOfferTbl(){
     '<td><button class="btn bg bsm" onclick="prevOffer(\''+o.id+'\')">👁</button> <button class="btn bg bsm" onclick="editOffer(\''+o.id+'\')">✏️</button> '+(isStaff()?'':'<button class="btn bg bsm" onclick="delOffer(\''+o.id+'\')">🗑</button>')+'</td></tr>';
   }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--sl)">No offers yet</td></tr>';
 }
-function chOfferStat(id,val){if(!val)return;const o=S.offers.find(x=>x.id===id);if(o){o.status=val;persist();renderOfferTbl();toast('Updated');}}
+function chOfferStat(id,val){if(!val)return;const o=S.offers.find(x=>x.id===id);if(o){o.status=val;logHistory('Status Change','Offer',o.offerNo+' → '+val);persist();renderOfferTbl();toast('Updated');}}
+
+// ── ACTIVITY HISTORY PAGE ──
+function renderHistory(){
+  pruneHistory();
+  const tb=document.getElementById('history-tb');if(!tb)return;
+  const rows=(S.history||[]).slice().reverse();
+  tb.innerHTML=rows.length?rows.map(h=>{
+    const d=new Date(h.ts);
+    const when=d.toLocaleDateString('en-IN')+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const actColor=h.action==='Deleted'?'var(--rd)':(h.action==='Created'?'var(--gn)':'var(--am)');
+    return '<tr><td style="font-size:12px;white-space:nowrap">'+when+'</td><td style="font-weight:600;color:'+actColor+'">'+esc(h.action)+'</td><td>'+esc(h.entity)+'</td><td style="font-size:12px">'+esc(h.detail||'—')+'</td><td style="font-size:11px;text-transform:capitalize">'+esc(h.role||'admin')+'</td></tr>';
+  }).join(''):'<tr><td colspan="5"><div class="empty"><div class="ei">🕘</div><p>No activity recorded in the last 7 days.</p></div></td></tr>';
+}
+function downloadHistory(){
+  pruneHistory();
+  const rows=(S.history||[]).slice().reverse();
+  if(!rows.length){toast('No history to download');return;}
+  let csv='Date & Time,Action,Entity,Details,By\n';
+  rows.forEach(h=>{
+    const d=new Date(h.ts);
+    const when=d.toLocaleDateString('en-IN')+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const esc2=s=>'"'+String(s||'').replace(/"/g,'""')+'"';
+    csv+=[esc2(when),esc2(h.action),esc2(h.entity),esc2(h.detail),esc2(h.role||'admin')].join(',')+'\n';
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='activity-history-'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('History downloaded ✓');
+}
 function prevOffer(id){
   S.curOfferPrev=id;
   const o=S.offers.find(x=>x.id===id);
@@ -2935,10 +3040,22 @@ function renderDash(){
     return'<tr><td style="font-weight:700;color:var(--rust)">'+inv.number+'</td><td>'+esc(inv.bname)+'</td><td>'+DF(inv.date)+'</td><td style="font-weight:700">'+F(inv.grand)+'</td><td style="color:'+(bal>0?'var(--rd)':'var(--gn)')+'">'+F(bal)+'</td><td><span class="badge b'+inv.status+'">'+inv.status+'</span></td><td><button class="btn bg bsm" onclick="prevInv(\''+inv.id+'\')">👁</button> <button class="btn bg bsm" onclick="editInv(\''+inv.id+'\')">✏️</button></td></tr>';
   }).join('')||'<tr><td colspan="7"><div class="empty"><div class="ei">🧾</div><p>No invoices yet.</p></div></td></tr>';
   // Recent POs
-  document.getElementById('dash-po-tb').innerHTML=allPOs.slice().reverse().slice(0,6).map(po=>
-    '<tr><td style="font-weight:700;color:var(--rust)">'+esc(po.poNo)+'</td><td>'+esc(po.supName)+'</td><td>'+DF(po.date)+'</td><td style="font-weight:700;color:#E84393">'+F(po.total)+'</td>'+
-    '<td><button class="btn bg bsm" onclick="prevPO(\''+po.id+'\')">👁</button> <button class="btn bg bsm" onclick="editPO(\''+po.id+'\')">✏️</button></td></tr>'
-  ).join('')||'<tr><td colspan="5"><div class="empty"><div class="ei">📑</div><p>No purchase orders yet.</p></div></td></tr>';
+  // Offer stats
+  const allOffers=S.offers||[];
+  const offTotalVal=allOffers.reduce((s,o)=>s+V(o.total),0);
+  const offMonth=allOffers.filter(o=>{const d=new Date(o.date);return d.getFullYear()===y&&d.getMonth()===m;});
+  const offFinal=allOffers.filter(o=>(o.status||'submitted')==='order_final');
+  const offConv=allOffers.length?Math.round(offFinal.length/allOffers.length*100):0;
+  document.getElementById('d-off-total').textContent=F(offTotalVal);
+  document.getElementById('d-off-month').textContent=offMonth.length;
+  document.getElementById('d-off-monthl').textContent=now.toLocaleString('default',{month:'long'})+' '+y;
+  document.getElementById('d-off-final').textContent=offFinal.length;
+  document.getElementById('d-off-conv').textContent=offConv+'%';
+  document.getElementById('dash-off-tb').innerHTML=allOffers.slice().reverse().slice(0,6).map(o=>{
+    const st=o.status||'submitted';
+    return '<tr><td style="font-weight:700;color:var(--rust)">'+esc(o.offerNo)+'</td><td>'+esc(o.custName)+'</td><td>'+DF(o.date)+'</td><td style="font-weight:700">'+F(o.total)+'</td><td><span class="badge b'+st+'">'+st.replace('_',' ')+'</span></td>'+
+    '<td><button class="btn bg bsm" onclick="prevOffer(\''+o.id+'\')">👁</button> <button class="btn bg bsm" onclick="editOffer(\''+o.id+'\')">✏️</button></td></tr>';
+  }).join('')||'<tr><td colspan="6"><div class="empty"><div class="ei">📨</div><p>No offers yet.</p></div></td></tr>';
 }
 function setFS(s,el){S.fStat=s;document.querySelectorAll('#page-invoices .tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderInvTbl();}
 function filterInv(txt){S.fTxt=txt.toLowerCase();renderInvTbl();}
