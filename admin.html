@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -321,6 +322,7 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <div class="ni" onclick="go('reports')"><span class="ic">📈</span>Reports</div>
     <div class="ni" onclick="go('po')"><span class="ic">📑</span>Purchase Orders</div>
     <div class="ni" onclick="go('offers')"><span class="ic">📨</span>Offers</div>
+    <div class="ni" onclick="go('staff')"><span class="ic">🧑‍💼</span>Staff</div>
     <div class="ni" onclick="go('history')"><span class="ic">🕘</span>History</div>
     <div class="ni" onclick="go('settings')"><span class="ic">⚙️</span>Settings</div>
   </nav>
@@ -587,6 +589,12 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
       </div>
     </div>
     <div class="tw"><table><thead><tr><th>Date &amp; Time</th><th>Action</th><th>Entity</th><th>Details</th><th>By</th></tr></thead><tbody id="history-tb"></tbody></table></div>
+  </div>
+</div>
+
+<div id="page-staff" class="page">
+  <div class="card"><div class="ch"><h3>🧑‍💼 Staff / Employees</h3><button class="btn bp bsm" onclick="openNewEmp()">＋ Add Staff</button></div>
+    <div class="tw"><table><thead><tr><th>Code</th><th>Name</th><th>Designation</th><th>Mobile</th><th>Email</th><th>Gross Salary</th><th>Actions</th></tr></thead><tbody id="emp-tb"></tbody></table></div>
   </div>
 </div>
 
@@ -939,6 +947,104 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
   </div>
 </div></div>
 
+<div id="emp-modal" class="mo" style="display:none"><div class="md" style="max-width:760px">
+  <div class="mh"><h3 id="emp-mt">Add Staff</h3><button class="mc" onclick="closeM('emp-modal')">×</button></div>
+  <div class="mb">
+    <div class="sl">Personal Details</div>
+    <div class="fgrid" style="margin-bottom:14px">
+      <div class="fg"><label>Full Name</label><input type="text" id="emp-name"></div>
+      <div class="fg"><label>Employee Code</label><input type="text" id="emp-code" placeholder="e.g. S11334"></div>
+      <div class="fg"><label>Mobile</label><input type="tel" id="emp-mobile"></div>
+      <div class="fg"><label>Email</label><input type="email" id="emp-email"></div>
+      <div class="fg"><label>Department</label><input type="text" id="emp-dept" placeholder="e.g. Head Office - Marketing"></div>
+      <div class="fg"><label>Designation</label><input type="text" id="emp-desg" placeholder="e.g. Sr. GM"></div>
+      <div class="fg"><label>Date of Joining</label><input type="date" id="emp-doj"></div>
+      <div class="fg"><label>UAN No.</label><input type="text" id="emp-uan"></div>
+    </div>
+    <div class="sl">Salary Breakup — Fixed Monthly Amount (₹) <span style="font-weight:400;font-size:10px;color:var(--sl);text-transform:none;letter-spacing:0">(prorated automatically by attendance on the pay slip)</span></div>
+    <div class="fgrid" style="margin-bottom:14px">
+      <div class="fg"><label>Basic</label><input type="number" id="emp-basic" value="0"></div>
+      <div class="fg"><label>Trans. Allowance</label><input type="number" id="emp-trans" value="0"></div>
+      <div class="fg"><label>H.R.A.</label><input type="number" id="emp-hraE" value="0"></div>
+      <div class="fg"><label>Edu. Allowance</label><input type="number" id="emp-edu" value="0"></div>
+      <div class="fg"><label>Medical Reimb.</label><input type="number" id="emp-medi" value="0"></div>
+      <div class="fg"><label>Uniform Allowance</label><input type="number" id="emp-uniform" value="0"></div>
+      <div class="fg"><label>Helper / Driver All.</label><input type="number" id="emp-helper" value="0"></div>
+      <div class="fg"><label>LTA Allowance</label><input type="number" id="emp-lta" value="0"></div>
+      <div class="fg"><label>Extra Allowance</label><input type="number" id="emp-extra" value="0"></div>
+    </div>
+    <div class="sl">Deductions Breakup — Fixed Monthly Amount (₹)</div>
+    <div class="fgrid">
+      <div class="fg"><label>P.F.</label><input type="number" id="emp-pf" value="0"></div>
+      <div class="fg"><label>P.T.</label><input type="number" id="emp-pt" value="0"></div>
+      <div class="fg"><label>H.R.A. (Ded.)</label><input type="number" id="emp-hraD" value="0"></div>
+      <div class="fg"><label>Advance</label><input type="number" id="emp-advD" value="0"></div>
+      <div class="fg"><label>Loan</label><input type="number" id="emp-loan" value="0"></div>
+      <div class="fg"><label>TDS</label><input type="number" id="emp-tds" value="0"></div>
+      <div class="fg"><label>Mobile (Ded.)</label><input type="number" id="emp-mobD" value="0"></div>
+      <div class="fg"><label>Benevolent Fund</label><input type="number" id="emp-benfund" value="0"></div>
+      <div class="fg"><label>Other 1</label><input type="number" id="emp-other1" value="0"></div>
+      <div class="fg"><label>Other 2</label><input type="number" id="emp-other2" value="0"></div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn bo" onclick="closeM('emp-modal')">Cancel</button>
+    <button class="btn bp" onclick="saveEmp()">💾 Save Staff</button>
+  </div>
+</div></div>
+
+<div id="att-modal" class="mo" style="display:none"><div class="md" style="max-width:560px">
+  <div class="mh"><h3 id="att-mt">Attendance</h3><button class="mc" onclick="closeM('att-modal')">×</button></div>
+  <div class="mb">
+    <div class="fgrid" style="margin-bottom:10px">
+      <div class="fg"><label>Month</label><input type="month" id="att-month" onchange="loadAttMonth()"></div>
+    </div>
+    <div class="sl">Attendance for the Month</div>
+    <div class="fgrid">
+      <div class="fg"><label>P. Days (Present)</label><input type="number" id="att-pdays" value="0" step="0.5"></div>
+      <div class="fg"><label>PH (Paid Holiday)</label><input type="number" id="att-ph" value="0" step="0.5"></div>
+      <div class="fg"><label>PL (Privilege Leave)</label><input type="number" id="att-pl" value="0" step="0.5"></div>
+      <div class="fg"><label>WO (Weekly Off)</label><input type="number" id="att-wo" value="0" step="0.5"></div>
+      <div class="fg"><label>CL (Casual Leave)</label><input type="number" id="att-cl" value="0" step="0.5"></div>
+      <div class="fg"><label>C.Off (Comp. Off)</label><input type="number" id="att-coff" value="0" step="0.5"></div>
+      <div class="fg"><label>OD (On Duty)</label><input type="number" id="att-od" value="0" step="0.5"></div>
+      <div class="fg"><label>LWP (Leave w/o Pay)</label><input type="number" id="att-lwp" value="0" step="0.5"></div>
+      <div class="fg"><label>ML (Medical Leave)</label><input type="number" id="att-ml" value="0" step="0.5"></div>
+      <div class="fg"><label>ABS (Absent)</label><input type="number" id="att-abs" value="0" step="0.5"></div>
+    </div>
+    <div class="sl" style="margin-top:12px">Leave Balance</div>
+    <div class="fgrid">
+      <div class="fg"><label>Bal. CL</label><input type="number" id="att-balcl" value="0" step="0.5"></div>
+      <div class="fg"><label>Bal. PL</label><input type="number" id="att-balpl" value="0" step="0.5"></div>
+    </div>
+    <p style="font-size:11px;color:var(--sl);margin-top:10px">LWP and ABS days reduce the earning amount proportionally on the pay slip. All other categories are treated as paid days.</p>
+  </div>
+  <div class="mf">
+    <button class="btn bo" onclick="closeM('att-modal')">Cancel</button>
+    <button class="btn bp" onclick="saveAttendance()">💾 Save Attendance</button>
+  </div>
+</div></div>
+
+<div id="payslip-modal" class="mo" style="display:none"><div class="md" style="max-width:420px">
+  <div class="mh"><h3>Generate Pay Slip</h3><button class="mc" onclick="closeM('payslip-modal')">×</button></div>
+  <div class="mb">
+    <div class="fg"><label>Month</label><input type="month" id="payslip-month"></div>
+  </div>
+  <div class="mf">
+    <button class="btn bo" onclick="closeM('payslip-modal')">Cancel</button>
+    <button class="btn bp" onclick="prevPayslip()">👁 Preview &amp; Download</button>
+  </div>
+</div></div>
+
+<div id="payslip-prev-modal" class="mo" style="display:none"><div class="md" style="max-width:820px">
+  <div class="mh"><h3>Pay Slip Preview</h3><button class="mc" onclick="closeM('payslip-prev-modal')">×</button></div>
+  <div class="mb" id="payslip-prev-body" style="background:#ddd;padding:18px"></div>
+  <div class="mf">
+    <button class="btn bo" onclick="closeM('payslip-prev-modal')">Close</button>
+    <button class="btn bgrn" onclick="dlPayslipPDF()">⬇ Download PDF</button>
+  </div>
+</div></div>
+
 <div id="sup-modal" class="mo" style="display:none"><div class="md" style="max-width:520px">
   <div class="mh"><h3 id="sup-mt">Add Supplier</h3><button class="mc" onclick="closeM('sup-modal')">×</button></div>
   <div class="mb">
@@ -1072,13 +1178,15 @@ window.applyRoleUI=function(role){
   if(settingsNav)settingsNav.style.display=isStaff()?'none':'';
   const historyNav=document.querySelector('.ni[onclick="go(\'history\')"]');
   if(historyNav)historyNav.style.display=isStaff()?'none':'';
+  const staffNav=document.querySelector('.ni[onclick="go(\'staff\')"]');
+  if(staffNav)staffNav.style.display=isStaff()?'none':'';
   ['f-usestamp','po-usestamp','offer-usestamp'].forEach(lockStampCheckbox);
   if(typeof renderAll==='function')renderAll();
 };
 let S={
-  invoices:[],products:[],customers:[],advances:[],payments:[],purchaseOrders:[],suppliers:[],offers:[],history:[],
+  invoices:[],products:[],customers:[],advances:[],payments:[],purchaseOrders:[],suppliers:[],offers:[],history:[],employees:[],
   nextN:1,nextAdv:1,nextPay:1,nextCust:1,nextPO:1,nextOffer:1,
-  eInvId:null,eProdId:null,eCustId:null,eAdvId:null,ePayId:null,ePOId:null,eOfferId:null,
+  eInvId:null,eProdId:null,eCustId:null,eAdvId:null,ePayId:null,ePOId:null,eOfferId:null,eEmpId:null,
   curPrev:null,curPOPrev:null,curOfferPrev:null,fStat:'all',fTxt:'',rP:'monthly',
   cfg:{name:'Yantriki Suppliers and Consultancy',gst:'23AADFY9269N1ZD',pan:'AADFY9269N',phone:'8815184776',email:'info@yantrikisc.in',a1:'Plot No. 347, Mandakini Kolar Road',a2:'Bhopal (MP) 462042',juris:'Bhopal',bank:'',aname:'',acno:'',ifsc:'',branch:'',actype:'Current',upi:'',prefix:'YSC',gsttype:'intrastate',sign:'Authorised Signatory',terms:30,footer:'Delivery:- Freight Charges FREE ON ROAD',poprefix:'YSC-PO',potaxtype:'igst',potaxpct:18,posign:'Authorised Signatory',podel:'',popt:'',pobill:'',ponotes:'',offerprefix:'YSC-OFR',offersign:'Authorised Signatory',offerfontsize:'11',offerpricenote:'The below quoted prices are inclusive of GST@18%, Transportation to site and Insurance.',offernotes:'Looking forward for your valuable order.',stampInv:false,stampPO:false,stampOffer:true}
 };
@@ -1115,8 +1223,8 @@ function fieldDiff(oldObj,newObj,fieldMap){
 }
 
 // ── STORAGE ──
-function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,history:S.history,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,cfg:S.cfg});}
-function applyData(raw){try{const p=JSON.parse(raw);S.invoices=p.invoices||[];S.products=p.products||[];S.customers=p.customers||[];S.advances=p.advances||[];S.payments=p.payments||[];S.purchaseOrders=p.purchaseOrders||[];S.suppliers=p.suppliers||[];S.offers=p.offers||[];S.history=p.history||[];pruneHistory();S.nextN=p.nextN||1;S.nextAdv=p.nextAdv||1;S.nextPay=p.nextPay||1;S.nextCust=p.nextCust||1;S.nextPO=p.nextPO||1;S.nextOffer=p.nextOffer||1;S.cfg=Object.assign({},S.cfg,p.cfg||{});backfillCustIds();return true;}catch(e){return false;}}
+function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,history:S.history,employees:S.employees,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,cfg:S.cfg});}
+function applyData(raw){try{const p=JSON.parse(raw);S.invoices=p.invoices||[];S.products=p.products||[];S.customers=p.customers||[];S.advances=p.advances||[];S.payments=p.payments||[];S.purchaseOrders=p.purchaseOrders||[];S.suppliers=p.suppliers||[];S.offers=p.offers||[];S.history=p.history||[];S.employees=p.employees||[];pruneHistory();S.nextN=p.nextN||1;S.nextAdv=p.nextAdv||1;S.nextPay=p.nextPay||1;S.nextCust=p.nextCust||1;S.nextPO=p.nextPO||1;S.nextOffer=p.nextOffer||1;S.cfg=Object.assign({},S.cfg,p.cfg||{});backfillCustIds();return true;}catch(e){return false;}}
 async function persist(){
   const d=payload();
   try{localStorage.setItem(STORE_KEY,d);}catch(e){}
@@ -1155,7 +1263,7 @@ function doReset(){
   // Reset all data, keep settings/cfg intact
   setTimeout(()=>{
     S.invoices=[];S.products=[];S.customers=[];S.advances=[];S.payments=[];
-    S.purchaseOrders=[];S.suppliers=[];S.offers=[];S.history=[];
+    S.purchaseOrders=[];S.suppliers=[];S.offers=[];S.history=[];S.employees=[];
     S.nextN=1;S.nextAdv=1;S.nextPay=1;S.nextCust=1;S.nextPO=1;S.nextOffer=1;
     S.eInvId=null;S.eProdId=null;S.eCustId=null;S.eAdvId=null;S.ePayId=null;S.ePOId=null;S.eSupId=null;S.eOfferId=null;
     S.curPrev=null;S.curPOPrev=null;S.curOfferPrev=null;S.fStat='all';S.fTxt='';
@@ -1212,8 +1320,8 @@ function custByAny(val){
 }
 
 // ── NAVIGATION ──
-const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','offers','history','settings'];
-const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',offers:'Offers',history:'Activity History',settings:'Settings'};
+const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','offers','staff','history','settings'];
+const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',offers:'Offers',staff:'Staff',history:'Activity History',settings:'Settings'};
 const TOP_BTN_MAP={
   dashboard:null, invoices:['＋ New Invoice','openNewInv'],
   advances:['＋ Record Advance','openAdvM'], payments:['＋ Record Payment','openPayM'],
@@ -1224,7 +1332,7 @@ const TOP_BTN_MAP={
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open');}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
 function go(p){
-  if((p==='settings'||p==='history')&&isStaff()){toast('⚠ Restricted for your account');p='dashboard';}
+  if((p==='settings'||p==='history'||p==='staff')&&isStaff()){toast('⚠ Restricted for your account');p='dashboard';}
   closeSidebar();
   PAGES.forEach(x=>{const el=document.getElementById('page-'+x);if(el)el.classList.remove('active');});
   document.querySelectorAll('.ni').forEach(el=>el.classList.remove('active'));
@@ -1246,6 +1354,7 @@ function go(p){
   if(p==='settings')loadSett();
   if(p==='reports')renderReports();
   if(p==='history')renderHistory();
+  if(p==='staff')renderEmpTbl();
   renderAll();
 }
 document.getElementById('top-btn').addEventListener('click',function(){
@@ -2799,6 +2908,246 @@ async function downloadCustStatement(name){
   if(!custName){toast('⚠ Select a customer first');return;}
   toast('Generating statement…');
   try{const pdf=await renderCustStatementToPDF(custName);pdf.save('Statement-'+custName.replace(/[^a-z0-9]+/gi,'_')+'.pdf');toast('Statement downloaded ✓');}
+  catch(e){console.error(e);toast('PDF error – try again');}
+}
+
+// ── STAFF / EMPLOYEES ──
+const EMP_EARN_HEADS=[
+  {key:'basic',label:'BASIC'},{key:'trans',label:'TRANS ALL.'},{key:'hraE',label:'H.R.A'},
+  {key:'edu',label:'EDU. ALL.'},{key:'medi',label:'MEDI. REMB.'},{key:'uniform',label:'UNIFORM ALL'},
+  {key:'helper',label:'HELPER/ DRIVER ALL.'},{key:'lta',label:'LTA ALL.'},{key:'extra',label:'EXTRA ALL.'}
+];
+const EMP_DED_HEADS=[
+  {key:'pf',label:'P.F.'},{key:'pt',label:'P.T'},{key:'hraD',label:'H.R.A'},{key:'advD',label:'ADVANCE'},
+  {key:'loan',label:'LOAN'},{key:'tds',label:'TDS'},{key:'mobD',label:'MOBILE'},{key:'benfund',label:'BEN FUND.'},
+  {key:'other1',label:'OTHER 1'},{key:'other2',label:'OTHER 2'}
+];
+function grossSalary(emp){return EMP_EARN_HEADS.reduce((s,h)=>s+V((emp.salary||{})[h.key]),0);}
+function totalDeductions(emp){return EMP_DED_HEADS.reduce((s,h)=>s+V((emp.deductions||{})[h.key]),0);}
+function renderEmpTbl(){
+  const tb=document.getElementById('emp-tb');if(!tb)return;
+  tb.innerHTML=(S.employees||[]).length?S.employees.map(e=>
+    '<tr><td style="font-weight:700;color:var(--rust);font-size:11px">'+esc(e.code||'—')+'</td><td style="font-weight:500">'+esc(e.name)+'</td><td>'+esc(e.desg||'—')+'</td><td>'+esc(e.mobile||'—')+'</td><td style="font-size:12px">'+esc(e.email||'—')+'</td><td style="font-weight:700">'+F(grossSalary(e))+'</td>'+
+    '<td style="white-space:nowrap"><button class="btn bg bsm" title="Attendance" onclick="openAttendance(\''+e.id+'\')">🗓</button> <button class="btn bg bsm" title="Pay Slip" onclick="openPayslip(\''+e.id+'\')">🧾</button> <button class="btn bg bsm" onclick="editEmp(\''+e.id+'\')">✏️</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delEmp(\''+e.id+'\')">🗑</button></td></tr>'
+  ).join(''):'<tr><td colspan="7"><div class="empty"><div class="ei">🧑‍💼</div><p>No staff added yet.</p></div></td></tr>';
+}
+function openNewEmp(){
+  if(blockIfStaff('⚠ Staff management is restricted for your account'))return;
+  S.eEmpId=null;
+  document.getElementById('emp-mt').textContent='Add Staff';
+  ['emp-name','emp-code','emp-mobile','emp-email','emp-dept','emp-desg','emp-doj','emp-uan'].forEach(id=>document.getElementById(id).value='');
+  [...EMP_EARN_HEADS,...EMP_DED_HEADS].forEach(h=>{});
+  EMP_EARN_HEADS.forEach(h=>document.getElementById('emp-'+h.key).value=0);
+  EMP_DED_HEADS.forEach(h=>document.getElementById('emp-'+h.key).value=0);
+  openM('emp-modal');
+}
+function editEmp(id){
+  if(blockIfStaff('⚠ Staff management is restricted for your account'))return;
+  const e=S.employees.find(x=>x.id===id);if(!e)return;
+  S.eEmpId=id;
+  document.getElementById('emp-mt').textContent='Edit Staff';
+  document.getElementById('emp-name').value=e.name||'';
+  document.getElementById('emp-code').value=e.code||'';
+  document.getElementById('emp-mobile').value=e.mobile||'';
+  document.getElementById('emp-email').value=e.email||'';
+  document.getElementById('emp-dept').value=e.dept||'';
+  document.getElementById('emp-desg').value=e.desg||'';
+  document.getElementById('emp-doj').value=e.doj||'';
+  document.getElementById('emp-uan').value=e.uan||'';
+  EMP_EARN_HEADS.forEach(h=>document.getElementById('emp-'+h.key).value=(e.salary||{})[h.key]||0);
+  EMP_DED_HEADS.forEach(h=>document.getElementById('emp-'+h.key).value=(e.deductions||{})[h.key]||0);
+  openM('emp-modal');
+}
+function saveEmp(){
+  const name=document.getElementById('emp-name').value.trim();
+  if(!name){toast('⚠ Enter staff name');return;}
+  const salary={},deductions={};
+  EMP_EARN_HEADS.forEach(h=>salary[h.key]=V(document.getElementById('emp-'+h.key).value));
+  EMP_DED_HEADS.forEach(h=>deductions[h.key]=V(document.getElementById('emp-'+h.key).value));
+  const emp={
+    id:S.eEmpId||uid(),
+    name,
+    code:document.getElementById('emp-code').value,
+    mobile:document.getElementById('emp-mobile').value,
+    email:document.getElementById('emp-email').value,
+    dept:document.getElementById('emp-dept').value,
+    desg:document.getElementById('emp-desg').value,
+    doj:document.getElementById('emp-doj').value,
+    uan:document.getElementById('emp-uan').value,
+    salary,deductions,
+    attendance:(S.eEmpId&&S.employees.find(x=>x.id===S.eEmpId)?.attendance)||{}
+  };
+  const isNewEmp=!S.eEmpId;
+  const oldEmp=S.eEmpId?S.employees.find(x=>x.id===S.eEmpId):null;
+  if(S.eEmpId){const idx=S.employees.findIndex(x=>x.id===S.eEmpId);S.employees[idx]=emp;}
+  else{S.employees.push(emp);}
+  const empDiff=isNewEmp?('Gross: '+F(grossSalary(emp))):(fieldDiff(oldEmp,emp,{name:'Name',code:'Code',mobile:'Mobile',email:'Email',desg:'Designation',salary:'Salary Breakup',deductions:'Deductions'})||'No field changes detected');
+  logHistory(isNewEmp?'Created':'Edited','Staff',name+' — '+empDiff);
+  persist();renderEmpTbl();closeM('emp-modal');toast('✓ Staff saved');
+}
+function delEmp(id){
+  if(blockIfStaff('⚠ Staff management is restricted for your account'))return;
+  if(!confirm('Delete this staff member?'))return;
+  const e=S.employees.find(x=>x.id===id);
+  S.employees=S.employees.filter(x=>x.id!==id);
+  logHistory('Deleted','Staff',e?e.name:id);
+  persist();renderEmpTbl();toast('Deleted');
+}
+
+// ── ATTENDANCE ──
+function openAttendance(empId){
+  const e=S.employees.find(x=>x.id===empId);if(!e)return;
+  S.eEmpId=empId;
+  document.getElementById('att-mt').textContent='Attendance — '+e.name;
+  const now=new Date();
+  document.getElementById('att-month').value=now.toISOString().slice(0,7);
+  loadAttMonth();
+  openM('att-modal');
+}
+function loadAttMonth(){
+  const e=S.employees.find(x=>x.id===S.eEmpId);if(!e)return;
+  const month=document.getElementById('att-month').value;
+  const a=(e.attendance||{})[month]||{};
+  ['pdays','ph','pl','wo','cl','coff','od','lwp','ml','abs','balcl','balpl'].forEach(k=>{
+    document.getElementById('att-'+k).value=a[k]!=null?a[k]:0;
+  });
+}
+function saveAttendance(){
+  const e=S.employees.find(x=>x.id===S.eEmpId);if(!e)return;
+  const month=document.getElementById('att-month').value;
+  if(!month){toast('⚠ Select a month');return;}
+  if(!e.attendance)e.attendance={};
+  const rec={};
+  ['pdays','ph','pl','wo','cl','coff','od','lwp','ml','abs','balcl','balpl'].forEach(k=>{
+    rec[k]=V(document.getElementById('att-'+k).value);
+  });
+  e.attendance[month]=rec;
+  logHistory('Edited','Staff Attendance',e.name+' — '+month+' attendance updated');
+  persist();renderEmpTbl();closeM('att-modal');toast('✓ Attendance saved');
+}
+
+// ── PAY SLIP ──
+function daysInMonth(monthKey){
+  const[y,m]=monthKey.split('-').map(Number);
+  return new Date(y,m,0).getDate();
+}
+function monthLabel(monthKey){
+  const[y,m]=monthKey.split('-').map(Number);
+  return new Date(y,m-1,1).toLocaleString('default',{month:'long'})+' - '+y;
+}
+function openPayslip(empId){
+  S.eEmpId=empId;
+  const now=new Date();
+  document.getElementById('payslip-month').value=now.toISOString().slice(0,7);
+  openM('payslip-modal');
+}
+function prevPayslip(){
+  const month=document.getElementById('payslip-month').value;
+  if(!month){toast('⚠ Select a month');return;}
+  const e=S.employees.find(x=>x.id===S.eEmpId);if(!e)return;
+  S.curPayslip={empId:e.id,month};
+  document.getElementById('payslip-prev-body').innerHTML=buildPayslipPDF(e,month);
+  closeM('payslip-modal');
+  openM('payslip-prev-modal');
+}
+function buildPayslipPDF(emp,monthKey){
+  const C=S.cfg;
+  const totalDays=daysInMonth(monthKey);
+  const a=(emp.attendance||{})[monthKey]||{pdays:totalDays,ph:0,pl:0,wo:0,cl:0,coff:0,od:0,lwp:0,ml:0,abs:0,balcl:0,balpl:0};
+  const unpaidDays=V(a.lwp)+V(a.abs);
+  const ratio=Math.max(0,(totalDays-unpaidDays))/totalDays;
+  const sal=emp.salary||{};
+  const ded=emp.deductions||{};
+  let grossFix=0,grossEarn=0;
+  const earnRows=EMP_EARN_HEADS.map(h=>{
+    const fix=V(sal[h.key]);
+    const earn=Math.round(fix*ratio);
+    grossFix+=fix;grossEarn+=earn;
+    return '<tr><td style="border-bottom:1px dashed #999;padding:3px 6px">'+h.label+'</td><td style="border-bottom:1px dashed #999;padding:3px 6px;text-align:right">'+FN(fix)+'</td><td style="border-bottom:1px dashed #999;padding:3px 6px;text-align:right">'+FN(earn)+'</td></tr>';
+  }).join('');
+  let grossDed=0;
+  const dedRows=EMP_DED_HEADS.map(h=>{
+    const amt=V(ded[h.key]);
+    grossDed+=amt;
+    return '<tr><td style="border-bottom:1px dashed #999;padding:3px 6px">'+h.label+'</td><td style="border-bottom:1px dashed #999;padding:3px 6px;text-align:right">'+FN(amt)+'</td></tr>';
+  }).join('');
+  const netPayable=Math.round(grossEarn-grossDed);
+  return `<div style="width:794px;min-height:520px;background:#fff;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#000;box-sizing:border-box;border:2px dashed #000;padding:10px">
+    <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
+      <tr>
+        <td style="font-size:14px;font-weight:bold">${esc(C.name)}</td>
+        <td style="text-align:right;font-size:13px;font-weight:bold">PAY SLIP</td>
+      </tr>
+    </table>
+    <div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:4px 0;text-align:center;font-weight:bold;position:relative">
+      PAY SLIP
+      <span style="position:absolute;right:0;top:4px;font-weight:normal">MONTH &amp; YEAR: <b>${monthLabel(monthKey)}</b></span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-top:8px">
+      <tr>
+        <td style="width:32%;vertical-align:top;border-right:1px dashed #000;padding:4px 8px 4px 0">
+          <div style="font-weight:bold;text-align:center;margin-bottom:4px">PARTICULARS</div>
+          <div style="line-height:1.9">
+            NAME&nbsp;&nbsp;: <b>${esc(emp.name)}</b><br>
+            CODE&nbsp;&nbsp;: ${esc(emp.code||'—')}<br>
+            DEPT&nbsp;&nbsp;: ${esc(emp.dept||'—')}<br>
+            DESG.&nbsp;: ${esc(emp.desg||'—')}<br>
+            DOJ&nbsp;&nbsp;: ${emp.doj?DF(emp.doj):'—'}<br>
+            UAN NO : ${esc(emp.uan||'—')}
+          </div>
+          <div style="font-weight:bold;text-align:center;margin:8px 0 4px">ATTENDANCE</div>
+          <table style="width:100%;font-size:10.5px"><tr><td>P.DAYS : ${FN(a.pdays)}</td><td>PH : ${FN(a.ph)}</td></tr>
+          <tr><td>PL : ${FN(a.pl)}</td><td>WO : ${FN(a.wo)}</td></tr>
+          <tr><td>CL : ${FN(a.cl)}</td><td>C OFF : ${FN(a.coff)}</td></tr>
+          <tr><td>OD : ${FN(a.od)}</td><td>LWP : ${FN(a.lwp)}</td></tr>
+          <tr><td>ML : ${FN(a.ml)}</td><td>ABS : ${FN(a.abs)}</td></tr></table>
+          <div style="font-weight:bold;text-align:center;margin:8px 0 4px">LEAVE BALANCE</div>
+          <div>BAL CL. : ${FN(a.balcl)} &nbsp;&nbsp; BAL PL : ${FN(a.balpl)}</div>
+        </td>
+        <td style="width:44%;vertical-align:top;border-right:1px dashed #000;padding:4px 8px">
+          <table style="width:100%;border-collapse:collapse">
+            <tr style="font-weight:bold"><td style="border-bottom:1px dashed #000;padding:3px 6px">HEADS</td><td style="border-bottom:1px dashed #000;padding:3px 6px;text-align:right">FIX AMT.</td><td style="border-bottom:1px dashed #000;padding:3px 6px;text-align:right">EARNING AMT.</td></tr>
+            ${earnRows}
+            <tr style="font-weight:bold"><td style="padding:4px 6px">Gross Amt</td><td style="padding:4px 6px;text-align:right">${FN(grossFix)}</td><td style="padding:4px 6px;text-align:right">${FN(grossEarn)}</td></tr>
+          </table>
+        </td>
+        <td style="width:24%;vertical-align:top;padding:4px 0 4px 8px">
+          <table style="width:100%;border-collapse:collapse">
+            <tr style="font-weight:bold"><td style="border-bottom:1px dashed #000;padding:3px 6px">HEADS</td><td style="border-bottom:1px dashed #000;padding:3px 6px;text-align:right">DED AMT.</td></tr>
+            ${dedRows}
+            <tr style="font-weight:bold"><td style="padding:4px 6px">&nbsp;</td><td style="padding:4px 6px;text-align:right">${FN(grossDed)}</td></tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <div style="border-top:1px dashed #000;margin-top:6px;padding-top:6px;display:flex;gap:10px;align-items:baseline">
+      <div style="font-weight:bold">NET PAYBLE:</div>
+      <div style="font-weight:bold">${FN(netPayable)}</div>
+      <div>${n2w(Math.round(netPayable))} Only</div>
+    </div>
+    <div style="margin-top:6px;font-size:10px;font-weight:bold">System Generated Pay Slip</div>
+  </div>`;
+}
+async function renderPayslipToPDF(emp,monthKey){
+  const zone=document.getElementById('pzone');
+  zone.innerHTML=buildPayslipPDF(emp,monthKey);
+  zone.style.cssText='position:fixed;left:0;top:0;width:794px;background:#fff;z-index:9999;pointer-events:none';
+  await new Promise(r=>setTimeout(r,400));
+  const el=zone.firstElementChild;
+  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
+  zone.innerHTML='';zone.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+  const PW=pdf.internal.pageSize.getWidth();
+  const imgH=(canvas.height/canvas.width)*PW;
+  pdf.addImage(canvas.toDataURL('image/jpeg',0.85),'JPEG',0,0,PW,imgH);
+  return pdf;
+}
+async function dlPayslipPDF(){
+  if(!S.curPayslip)return;
+  const emp=S.employees.find(x=>x.id===S.curPayslip.empId);if(!emp)return;
+  toast('Generating pay slip…');
+  try{const pdf=await renderPayslipToPDF(emp,S.curPayslip.month);pdf.save('Payslip-'+emp.name.replace(/[^a-z0-9]+/gi,'_')+'-'+S.curPayslip.month+'.pdf');toast('Pay slip downloaded ✓');}
   catch(e){console.error(e);toast('PDF error – try again');}
 }
 
