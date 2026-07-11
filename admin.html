@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -60,64 +59,50 @@
     }
   };
 
+  // ── ROLE MAPPING (based on which Firebase account signs in) ──
+  const ADMIN_EMAILS = ['ravi.goyal2@gmail.com','ansh01012008@gmail.com'];
+  const STAFF_EMAIL = 'yantriki.sc@gmail.com';
+  function roleForEmail(email){
+    if(!email) return null;
+    const e = email.trim().toLowerCase();
+    if(ADMIN_EMAILS.includes(e)) return 'admin';
+    if(e === STAFF_EMAIL) return 'staff';
+    return null;
+  }
+
   window.logoutUser = async function(){
     try{ await fbAuth.signOut(); }catch(e){}
-    try{ sessionStorage.removeItem('ynk_role'); }catch(e){}
     window.USER_ROLE = null;
-  };
-
-  window.checkPin = function(){
-    const val = document.getElementById('pin-input').value.trim();
-    const errEl = document.getElementById('pin-err');
-    errEl.textContent = '';
-    let role = null;
-    if(val === '326065') role = 'admin';
-    else if(val === '123456') role = 'staff';
-    if(!role){
-      errEl.textContent = 'Incorrect PIN.';
-      document.getElementById('pin-input').value = '';
-      return;
-    }
-    try{ sessionStorage.setItem('ynk_role', role); }catch(e){}
-    window.USER_ROLE = role;
-    document.getElementById('pin-gate').style.display = 'none';
-    document.getElementById('main-app').style.display = '';
-    if(typeof window.onAuthReady === 'function') window.onAuthReady();
-    if(typeof window.applyRoleUI === 'function') window.applyRoleUI(role);
   };
 
   // Allow pressing Enter in password field to submit
   window.addEventListener('DOMContentLoaded', () => {
     const passEl = document.getElementById('login-pass');
     if(passEl) passEl.addEventListener('keydown', e => { if(e.key === 'Enter') window.loginUser(); });
-    const pinEl = document.getElementById('pin-input');
-    if(pinEl) pinEl.addEventListener('keydown', e => { if(e.key === 'Enter') window.checkPin(); });
   });
 
   fbAuth.onAuthStateChanged(async (user) => {
     const loginScreen = document.getElementById('login-screen');
     const mainApp = document.getElementById('main-app');
-    const pinGate = document.getElementById('pin-gate');
     if(user){
-      loginScreen.style.display = 'none';
-      let savedRole = null;
-      try{ savedRole = sessionStorage.getItem('ynk_role'); }catch(e){}
-      if(savedRole === 'admin' || savedRole === 'staff'){
-        window.USER_ROLE = savedRole;
-        pinGate.style.display = 'none';
-        mainApp.style.display = '';
-        if(typeof window.onAuthReady === 'function') window.onAuthReady();
-        if(typeof window.applyRoleUI === 'function') window.applyRoleUI(savedRole);
-      } else {
+      const role = roleForEmail(user.email);
+      if(!role){
+        // Signed-in account isn't one of the two recognized accounts — deny access.
+        const errEl = document.getElementById('login-err');
+        if(errEl) errEl.textContent = 'This account is not authorized to use this app.';
         mainApp.style.display = 'none';
-        pinGate.style.display = 'flex';
-        document.getElementById('pin-input').value = '';
-        document.getElementById('pin-err').textContent = '';
+        loginScreen.style.display = 'flex';
+        try{ await fbAuth.signOut(); }catch(e){}
+        return;
       }
+      loginScreen.style.display = 'none';
+      window.USER_ROLE = role;
+      mainApp.style.display = '';
+      if(typeof window.onAuthReady === 'function') window.onAuthReady();
+      if(typeof window.applyRoleUI === 'function') window.applyRoleUI(role);
     } else {
       loginScreen.style.display = 'flex';
       mainApp.style.display = 'none';
-      pinGate.style.display = 'none';
     }
   });
 </script>
@@ -238,7 +223,7 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
 .bl{font-size:9px;color:var(--sl);text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #pzone{position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1}
 .PINV{width:794px;min-height:1122px;padding:16px 20px;background:#fff;font-family:Arial,Helvetica,sans-serif;font-size:9.5px;color:#000;display:flex;flex-direction:column}
-.PO{border:2px solid #000;flex:1;display:flex;flex-direction:column}
+.PO{border:2px solid #000;border-bottom:2.5px solid #000;display:flex;flex-direction:column}
 .PT{text-align:center;padding:6px 8px;border-bottom:1.5px solid #000;font-size:15px;font-weight:bold;letter-spacing:4px}
 .PC{display:flex;justify-content:space-between;align-items:center;padding:8px 10px 6px;border-bottom:1.5px solid #000;gap:10px}
 .PCL{display:flex;align-items:center;gap:10px}
@@ -316,19 +301,6 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
       <button class="btn bp" style="justify-content:center" onclick="loginUser()">Sign In</button>
       <div id="login-err" style="font-size:11.5px;color:#DC2626;min-height:14px"></div>
       <div style="font-size:10.5px;color:#9CA3AF;text-align:center;margin-top:4px">First time? Ask the admin to create your account, or use the console to add one.</div>
-    </div>
-  </div>
-</div>
-
-<div id="pin-gate" style="position:fixed;inset:0;background:#1A1A2E;display:none;align-items:center;justify-content:center;z-index:999;font-family:'Inter',sans-serif">
-  <div style="background:#fff;border-radius:10px;padding:30px 28px;width:320px;box-shadow:0 8px 30px rgba(0,0,0,.3)">
-    <h2 style="font-size:16px;font-weight:700;color:#1A1A2E;margin-bottom:4px">🔒 Enter Access PIN</h2>
-    <p style="font-size:11.5px;color:#6B7280;margin-bottom:18px">Your PIN determines what you can see and do in the app.</p>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <input type="password" id="pin-input" placeholder="6-digit PIN" inputmode="numeric" maxlength="6" autocomplete="off" style="letter-spacing:4px;text-align:center;font-size:16px">
-      <button class="btn bp" style="justify-content:center" onclick="checkPin()">Unlock</button>
-      <div id="pin-err" style="font-size:11.5px;color:#DC2626;min-height:14px"></div>
-      <button class="btn bo bsm" style="justify-content:center" onclick="logoutUser()">← Back to Sign In</button>
     </div>
   </div>
 </div>
@@ -1119,6 +1091,25 @@ function logHistory(action,entity,detail){
   S.history.push({ts:Date.now(),action,entity,detail:detail||'',role:(typeof USER_ROLE!=='undefined'&&USER_ROLE)?USER_ROLE:'admin'});
   pruneHistory();
 }
+function fmtVal(v){
+  if(v===undefined||v===null||v==='')return '—';
+  if(Array.isArray(v))return v.length+' item(s)';
+  if(typeof v==='boolean')return v?'Yes':'No';
+  return String(v);
+}
+// Compares oldObj vs newObj over the given {key:label} map and returns a
+// human-readable "Field: old → new" summary of only what actually changed.
+function fieldDiff(oldObj,newObj,fieldMap){
+  const changes=[];
+  for(const key in fieldMap){
+    const oldV=oldObj?oldObj[key]:undefined;
+    const newV=newObj?newObj[key]:undefined;
+    const oldS=JSON.stringify(oldV);
+    const newS=JSON.stringify(newV);
+    if(oldS!==newS)changes.push(fieldMap[key]+': '+fmtVal(oldV)+' → '+fmtVal(newV));
+  }
+  return changes.join('; ');
+}
 
 // ── STORAGE ──
 function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,history:S.history,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,cfg:S.cfg});}
@@ -1355,6 +1346,7 @@ function loadSett(){
 }
 function saveSett(){
   if(blockIfStaff('⚠ Settings are restricted for your account'))return;
+  const oldCfg={...S.cfg};
   SK.forEach(k=>{const el=document.getElementById('s-'+k);if(el)S.cfg[k]=el.value;});
   const g=document.getElementById('s-gsttype');if(g)S.cfg.gsttype=g.value;
   const ac=document.getElementById('s-actype');if(ac)S.cfg.actype=ac.value;
@@ -1376,7 +1368,8 @@ function saveSett(){
   const oeb=document.getElementById('s-offeremailbody');if(oeb)S.cfg.offeremailbody=oeb.value;
   const ifz=document.getElementById('s-invfontsize');if(ifz)S.cfg.invfontsize=ifz.value;
   const pfz=document.getElementById('s-pofontsize');if(pfz)S.cfg.pofontsize=pfz.value;
-  logHistory('Edited','Settings','Company/document defaults updated');
+  const settDiff=fieldDiff(oldCfg,S.cfg,{name:'Company Name',gst:'GSTIN',phone:'Phone',email:'Email',terms:'Payment Terms',prefix:'Invoice Prefix',poprefix:'PO Prefix',offerprefix:'Offer Prefix',invfontsize:'Invoice Font Size',pofontsize:'PO Font Size',offerfontsize:'Offer Font Size',stampInv:'Stamp on Invoice',stampPO:'Stamp on PO',stampOffer:'Stamp on Offer',sign:'Signatory',posign:'PO Signatory',offersign:'Offer Signatory'})||'No key field changes detected';
+  logHistory('Edited','Settings',settDiff);
   persist();updSidebar();toast('Settings saved ✓');
 }
 function updSidebar(){document.getElementById('sb-n').textContent=(S.cfg.name||'Yantriki').split(' ')[0];document.getElementById('sb-foot').innerHTML='GST: '+(S.cfg.gst||'—')+'<br>PAN: '+(S.cfg.pan||'—')+'<br>'+(S.cfg.a2||'');}
@@ -1617,12 +1610,14 @@ function saveInv(type){
     items,taxT,discT,cgstT,sgstT,igstT,grand
   };
   const isNew=!S.eInvId;
+  const oldInv=S.eInvId?S.invoices.find(x=>x.id===S.eInvId):null;
   if(S.eInvId){const i=S.invoices.findIndex(x=>x.id===S.eInvId);S.invoices[i]=inv;}
   else{S.invoices.unshift(inv);S.nextN++;}
   upsertCust({name:bname,gst:inv.bgst,phone:inv.bph,email:inv.bem,addr:inv.baddr});
   const savedCust=S.customers.find(x=>x.name===bname);
   if(savedCust)inv.bcustid=savedCust.custId||inv.bcustid;
-  logHistory(isNew?'Created':'Edited','Invoice',num+' — '+bname);
+  const invDiff=isNew?('Customer: '+bname+'; Total: '+F(grand)+'; Status: '+status):(fieldDiff(oldInv,inv,{bname:'Customer',date:'Date',status:'Status',grand:'Total',notes:'Notes',po:'PO Ref',useStamp:'Stamp'})||'No field changes detected');
+  logHistory(isNew?'Created':'Edited','Invoice',num+' — '+invDiff);
   persist();closeM('inv-modal');renderAll();toast('Invoice saved ✓');
 }
 function upsertCust(d){
@@ -1781,8 +1776,10 @@ function saveCust(){
     projects
   };
   const isNewCust=!S.eCustId;
+  const oldCust=S.eCustId?S.customers.find(x=>x.id===S.eCustId):null;
   if(S.eCustId){const i=S.customers.findIndex(x=>x.id===S.eCustId);S.customers[i]=c;}else S.customers.push(c);
-  logHistory(isNewCust?'Created':'Edited','Customer',name);
+  const custDiff=isNewCust?('Phone: '+fmtVal(c.phone)+'; Email: '+fmtVal(c.email)):(fieldDiff(oldCust,c,{name:'Name',phone:'Phone',email:'Email',addr:'Address',gst:'GSTIN',projects:'Project Sites'})||'No field changes detected');
+  logHistory(isNewCust?'Created':'Edited','Customer',name+' — '+custDiff);
   persist();closeM('cust-modal');renderAll();toast('Saved ✓');
 }
 function delCust(id){if(!confirm('Delete?'))return;const c=S.customers.find(x=>x.id===id);S.customers=S.customers.filter(c=>c.id!==id);logHistory('Deleted','Customer',c?c.name:id);persist();renderAll();toast('Deleted');}
@@ -2501,9 +2498,11 @@ function savePO(){
     useStamp:document.getElementById('po-usestamp').checked
   };
   const isNewPO=!S.ePOId;
+  const oldPO=S.ePOId?S.purchaseOrders.find(p=>p.id===S.ePOId):null;
   if(S.ePOId){const idx=S.purchaseOrders.findIndex(p=>p.id===S.ePOId);S.purchaseOrders[idx]=po;}
   else{S.purchaseOrders.push(po);S.nextPO++;}
-  logHistory(isNewPO?'Created':'Edited','Purchase Order',po.poNo+' — '+supName);
+  const poDiff=isNewPO?('Supplier: '+supName+'; Total: '+F(po.total)):(fieldDiff(oldPO,po,{supName:'Supplier',date:'Date',total:'Total',disc:'Discount',taxPct:'Tax %',priceType:'Rate Type',useStamp:'Stamp'})||'No field changes detected');
+  logHistory(isNewPO?'Created':'Edited','Purchase Order',po.poNo+' — '+poDiff);
   persist();renderPOTbl();closeM('po-modal');toast('✓ Purchase Order saved');
 }
 function delPO(id){if(blockIfStaff('⚠ Deleting purchase orders is restricted for your account'))return;if(!confirm('Delete this purchase order?'))return;const po=S.purchaseOrders.find(p=>p.id===id);S.purchaseOrders=S.purchaseOrders.filter(p=>p.id!==id);logHistory('Deleted','Purchase Order',po?po.poNo+' — '+po.supName:id);persist();renderPOTbl();toast('Deleted');}
@@ -2635,13 +2634,10 @@ function buildPOPDF(po){
         </div>
       </div>
   `;
-  const spacer=pageBreakSpacer(partA,partB,{pageW:738,headerH:152});
+  const spacer=pageBreakSpacer(partA,partB,{pageW:738,headerH:152,contTop:152});
 
-  return `<div style="position:relative;width:794px;min-height:1122px;font-family:Arial,Helvetica,sans-serif;font-size:${fz}px;color:#000;box-sizing:border-box;background:#fff">
-    <!-- LETTERHEAD BACKGROUND (top portion) -->
-    <img src="${LH_B64}" style="position:absolute;top:0;left:0;width:794px;height:auto;z-index:0;display:block">
-
-    <!-- OVERLAY CONTENT sits on top of letterhead -->
+  return `<div style="position:relative;width:794px;min-height:1122px;font-family:Arial,Helvetica,sans-serif;font-size:${fz}px;color:#000;box-sizing:border-box;background-image:url(${LH_B64});background-repeat:repeat-y;background-size:794px 1122px;background-position:top left">
+    <!-- OVERLAY CONTENT sits on top of the repeating letterhead -->
     <div style="position:relative;z-index:1;padding-top:152px;padding-left:28px;padding-right:28px;padding-bottom:80px">
       ${partA}
       ${spacer}
@@ -2817,7 +2813,8 @@ function saveOffer(){
   const isNewOffer=!S.eOfferId;
   if(S.eOfferId){const idx=S.offers.findIndex(o=>o.id===S.eOfferId);S.offers[idx]=offer;}
   else{S.offers.push(offer);S.nextOffer++;}
-  logHistory(isNewOffer?'Created':'Edited','Offer',offer.offerNo+' — '+custName);
+  const offerDiff=isNewOffer?('Customer: '+custName+'; Total: '+F(offer.total)):(fieldDiff(existing,offer,{custName:'Customer',date:'Date',project:'Project',total:'Total',status:'Status',offerValid:'Offer Validity',useStamp:'Stamp'})||'No field changes detected');
+  logHistory(isNewOffer?'Created':'Edited','Offer',offer.offerNo+' — '+offerDiff);
   persist();renderOfferTbl();closeM('offer-modal');toast('✓ Offer saved');
 }
 function delOffer(id){if(blockIfStaff('⚠ Deleting offers is restricted for your account'))return;if(!confirm('Delete this offer?'))return;const o=S.offers.find(x=>x.id===id);S.offers=S.offers.filter(o=>o.id!==id);logHistory('Deleted','Offer',o?o.offerNo+' — '+o.custName:id);persist();renderOfferTbl();toast('Deleted');}
@@ -2884,7 +2881,7 @@ function measureHTML(html,widthPx){
 // Splits [partA, partB] with a spacer div so partB never starts inside the unsafe
 // bottom zone of a printed page (where the letterhead's decorative graphic sits).
 function pageBreakSpacer(partAHtml,partBHtml,opts){
-  const o=Object.assign({pageW:738,pageH:1122,headerH:152,safeBottom:190,contTop:40},opts||{});
+  const o=Object.assign({pageW:738,pageH:1122,headerH:152,safeBottom:190,contTop:152},opts||{});
   const hA=measureHTML('<div style="padding-top:'+o.headerH+'px">'+partAHtml+'</div>',o.pageW)-o.headerH;
   const hB=measureHTML(partBHtml,o.pageW);
   const usable=o.pageH-o.safeBottom;
@@ -2940,9 +2937,13 @@ function buildOfferPDF(o){
     '<div style="border-top:1px solid #555;width:150px;margin:38px 0 4px auto"></div><div style="text-align:right"><b>'+esc(C.offersign||'Authorised Signatory')+'</b></div>';
 
   const partA=`
-      <div style="text-align:right;font-size:${fs}px;margin-bottom:14px">${DF(o.date)}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+        <div style="font-size:${fs}px;font-weight:bold">Offer No: ${esc(o.offerNo)}</div>
+        <div style="font-size:${fs}px">${DF(o.date)}</div>
+      </div>
 
-      <div style="font-size:${fs+0.5}px;font-weight:bold;margin-bottom:10px">${esc(o.custName)}<br>${(o.custAddr||'').replace(/\n/g,'<br>')}</div>
+      <div style="font-size:${fs+0.5}px;font-weight:bold;margin-bottom:2px">${esc(o.custName)}</div>
+      <div style="font-size:${fs}px;margin-bottom:10px">${(o.custAddr||'').replace(/\n/g,'<br>')}${o.custPhone?'<br><b>Mobile:</b> '+esc(o.custPhone):''}</div>
 
       ${o.subject?`<div style="font-size:${fs}px;margin-bottom:10px"><b>Re.:</b> ${esc(o.subject)}</div>`:''}
 
@@ -2977,10 +2978,9 @@ function buildOfferPDF(o){
         </div>
       </div>
   `;
-  const spacer=pageBreakSpacer(partA,partB,{pageW:738,headerH:152});
+  const spacer=pageBreakSpacer(partA,partB,{pageW:738,headerH:152,contTop:152});
 
-  return `<div style="position:relative;width:794px;min-height:1122px;font-family:Arial,Helvetica,sans-serif;font-size:${fs}px;color:#000;box-sizing:border-box;background:#fff">
-    <img src="${OFFER_LH_B64}" style="position:absolute;top:0;left:0;width:794px;height:auto;z-index:0;display:block">
+  return `<div style="position:relative;width:794px;min-height:1122px;font-family:Arial,Helvetica,sans-serif;font-size:${fs}px;color:#000;box-sizing:border-box;background-image:url(${OFFER_LH_B64});background-repeat:repeat-y;background-size:794px 1122px;background-position:top left">
     <div style="position:relative;z-index:1;padding-top:152px;padding-left:28px;padding-right:28px;padding-bottom:80px">
       ${partA}
       ${spacer}
