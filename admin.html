@@ -457,7 +457,10 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <div class="card">
       <div class="ch">
         <h3>Customer Ledger</h3>
-        <select id="cust-select" onchange="renderCustDetail(this.value)" style="width:250px;font-size:13px"><option value="">— Select Customer —</option></select>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="cust-select" onchange="renderCustDetail(this.value)" style="width:250px;font-size:13px"><option value="">— Select Customer —</option></select>
+          <button class="btn bo bsm" id="cust-stmt-btn" style="display:none" onclick="downloadCustStatement()">⬇ Download Statement</button>
+        </div>
       </div>
       <div id="cust-detail-body" class="cb"><div class="empty"><div class="ei">👥</div><p>Select a customer above</p></div></div>
     </div>
@@ -1797,9 +1800,12 @@ function setCustTab(tab,el){
 }
 function renderCustDetail(name){
   const body=document.getElementById('cust-detail-body');
-  if(!name){body.innerHTML='<div class="empty"><div class="ei">👥</div><p>Select a customer</p></div>';return;}
+  const stmtBtn=document.getElementById('cust-stmt-btn');
+  if(!name){body.innerHTML='<div class="empty"><div class="ei">👥</div><p>Select a customer</p></div>';if(stmtBtn)stmtBtn.style.display='none';S.curCustDetail=null;return;}
   const c=S.customers.find(x=>x.name===name);
-  if(!c){body.innerHTML='<div class="empty"><p>Customer not found</p></div>';return;}
+  if(!c){body.innerHTML='<div class="empty"><p>Customer not found</p></div>';if(stmtBtn)stmtBtn.style.display='none';return;}
+  S.curCustDetail=name;
+  if(stmtBtn)stmtBtn.style.display='inline-flex';
   const custInvs=S.invoices.filter(i=>i.bname===name);
   const custAdvs=S.advances.filter(a=>a.cust===name);
   const custPays=S.payments.filter(p=>p.cust===name);
@@ -2668,6 +2674,134 @@ async function dlPOPDF(){
   try{const pdf=await renderPOToPDF(po);pdf.save(po.poNo+'.pdf');toast('PDF downloaded ✓');}catch(e){console.error(e);toast('PDF error – try again');}
 }
 
+// ── CUSTOMER STATEMENT ──
+function buildCustStatementPDF(name){
+  const C=S.cfg;
+  const c=S.customers.find(x=>x.name===name)||{name};
+  const invs=S.invoices.filter(i=>i.bname===name).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const advs=S.advances.filter(a=>a.cust===name).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const pays=S.payments.filter(p=>p.cust===name).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const offs=(S.offers||[]).filter(o=>o.custName===name).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const billed=invs.filter(i=>i.status!=='draft').reduce((s,i)=>s+V(i.grand),0);
+  const advTot=advs.reduce((s,a)=>s+V(a.amt),0);
+  const payTot=pays.reduce((s,p)=>s+V(p.amt),0);
+  const bal=Math.max(0,billed-advTot-payTot);
+  const fs=9.5;
+
+  const invRows=invs.length?invs.map(i=>
+    '<tr><td style="border:1px solid #999;padding:4px 6px">'+esc(i.number)+'</td><td style="border:1px solid #999;padding:4px 6px">'+DF(i.date)+'</td><td style="border:1px solid #999;padding:4px 6px;text-transform:capitalize">'+esc(i.status)+'</td><td style="border:1px solid #999;padding:4px 6px;text-align:right">'+FN(i.grand)+'</td></tr>'
+  ).join(''):'<tr><td colspan="4" style="border:1px solid #999;padding:6px;text-align:center;color:#888">No invoices</td></tr>';
+
+  const advRows=advs.length?advs.map(a=>
+    '<tr><td style="border:1px solid #999;padding:4px 6px">'+esc(a.ref)+'</td><td style="border:1px solid #999;padding:4px 6px">'+DF(a.date)+'</td><td style="border:1px solid #999;padding:4px 6px">'+esc(a.mode||'—')+'</td><td style="border:1px solid #999;padding:4px 6px;text-align:right">'+FN(a.amt)+'</td></tr>'
+  ).join(''):'<tr><td colspan="4" style="border:1px solid #999;padding:6px;text-align:center;color:#888">No advances</td></tr>';
+
+  const payRows=pays.length?pays.map(p=>
+    '<tr><td style="border:1px solid #999;padding:4px 6px">'+esc(p.ref)+'</td><td style="border:1px solid #999;padding:4px 6px">'+DF(p.date)+'</td><td style="border:1px solid #999;padding:4px 6px">'+esc(p.invNum||'—')+'</td><td style="border:1px solid #999;padding:4px 6px">'+esc(p.mode||'—')+'</td><td style="border:1px solid #999;padding:4px 6px;text-align:right">'+FN(p.amt)+'</td></tr>'
+  ).join(''):'<tr><td colspan="5" style="border:1px solid #999;padding:6px;text-align:center;color:#888">No payments</td></tr>';
+
+  const offRows=offs.length?offs.map(o=>{
+    const st=o.status||'submitted';
+    return '<tr><td style="border:1px solid #999;padding:4px 6px">'+esc(o.offerNo)+'</td><td style="border:1px solid #999;padding:4px 6px">'+DF(o.date)+'</td><td style="border:1px solid #999;padding:4px 6px;text-transform:capitalize">'+st.replace('_',' ')+'</td><td style="border:1px solid #999;padding:4px 6px;text-align:right">'+FN(o.total)+'</td></tr>';
+  }).join(''):'';
+
+  const partA=`
+      <div style="text-align:center;font-size:${fs+5}px;font-weight:bold;letter-spacing:2px;margin-bottom:4px">STATEMENT OF ACCOUNT</div>
+      <div style="text-align:center;font-size:${fs}px;color:#555;margin-bottom:14px">As on ${DF(new Date().toISOString().slice(0,10))}</div>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:14px"><tr>
+        <td style="vertical-align:top;width:60%">
+          <div style="font-size:${fs}px;margin-bottom:1px">Customer:</div>
+          <div style="font-weight:bold;font-size:${fs+0.5}px">${esc(c.name)}</div>
+          <div style="font-size:${fs}px;margin-top:2px;line-height:1.5">${(c.addr||'').replace(/\n/g,'<br>')}</div>
+          ${c.phone?`<div style="font-size:${fs}px;margin-top:2px"><b>Mobile:</b> ${esc(c.phone)}</div>`:''}
+          ${c.email?`<div style="font-size:${fs}px">​<b>Email:</b> ${esc(c.email)}</div>`:''}
+          ${c.gst?`<div style="font-size:${fs}px;margin-top:2px"><b>GSTIN:</b> ${esc(c.gst)}</div>`:''}
+          ${c.custId?`<div style="font-size:${fs}px;margin-top:2px"><b>Customer ID:</b> ${esc(c.custId)}</div>`:''}
+        </td>
+        <td style="vertical-align:top;width:40%;text-align:right">
+          <div style="font-size:${fs}px"><b>Generated:</b> ${DF(new Date().toISOString().slice(0,10))}</div>
+        </td>
+      </tr></table>
+
+      <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+        <tr>
+          <td style="border:1px solid #999;padding:8px;text-align:center;background:#f7f7f7"><div style="font-size:9px;color:#666">Total Billed</div><div style="font-size:13px;font-weight:bold">${FN(billed)}</div></td>
+          <td style="border:1px solid #999;padding:8px;text-align:center;background:#f7f7f7"><div style="font-size:9px;color:#666">Total Advance</div><div style="font-size:13px;font-weight:bold;color:#B45309">${FN(advTot)}</div></td>
+          <td style="border:1px solid #999;padding:8px;text-align:center;background:#f7f7f7"><div style="font-size:9px;color:#666">Total Paid</div><div style="font-size:13px;font-weight:bold;color:#166534">${FN(payTot)}</div></td>
+          <td style="border:1px solid #999;padding:8px;text-align:center;background:#fef2f2"><div style="font-size:9px;color:#666">Balance Due</div><div style="font-size:14px;font-weight:bold;color:${bal>0?'#B91C1C':'#166534'}">${FN(bal)}</div></td>
+        </tr>
+      </table>
+
+      <div style="font-size:${fs+1}px;font-weight:bold;margin-bottom:6px;border-bottom:1.5px solid #333;padding-bottom:2px">Invoices (${invs.length})</div>
+      <table style="width:100%;border-collapse:collapse;font-size:${fs-0.5}px;margin-bottom:14px">
+        <thead><tr style="background:#f0f0f0"><th style="border:1px solid #666;padding:5px 6px">Invoice #</th><th style="border:1px solid #666;padding:5px 6px">Date</th><th style="border:1px solid #666;padding:5px 6px">Status</th><th style="border:1px solid #666;padding:5px 6px">Amount</th></tr></thead>
+        <tbody>${invRows}</tbody>
+      </table>
+  `;
+  const partB=`
+      <div style="font-size:${fs+1}px;font-weight:bold;margin-bottom:6px;border-bottom:1.5px solid #333;padding-bottom:2px">Advances (${advs.length})</div>
+      <table style="width:100%;border-collapse:collapse;font-size:${fs-0.5}px;margin-bottom:14px">
+        <thead><tr style="background:#f0f0f0"><th style="border:1px solid #666;padding:5px 6px">Ref</th><th style="border:1px solid #666;padding:5px 6px">Date</th><th style="border:1px solid #666;padding:5px 6px">Mode</th><th style="border:1px solid #666;padding:5px 6px">Amount</th></tr></thead>
+        <tbody>${advRows}</tbody>
+      </table>
+
+      <div style="font-size:${fs+1}px;font-weight:bold;margin-bottom:6px;border-bottom:1.5px solid #333;padding-bottom:2px">Payments (${pays.length})</div>
+      <table style="width:100%;border-collapse:collapse;font-size:${fs-0.5}px;margin-bottom:14px">
+        <thead><tr style="background:#f0f0f0"><th style="border:1px solid #666;padding:5px 6px">Ref</th><th style="border:1px solid #666;padding:5px 6px">Date</th><th style="border:1px solid #666;padding:5px 6px">Invoice</th><th style="border:1px solid #666;padding:5px 6px">Mode</th><th style="border:1px solid #666;padding:5px 6px">Amount</th></tr></thead>
+        <tbody>${payRows}</tbody>
+      </table>
+
+      ${offs.length?`
+      <div style="font-size:${fs+1}px;font-weight:bold;margin-bottom:6px;border-bottom:1.5px solid #333;padding-bottom:2px">Offers &amp; Orders (${offs.length})</div>
+      <table style="width:100%;border-collapse:collapse;font-size:${fs-0.5}px;margin-bottom:14px">
+        <thead><tr style="background:#f0f0f0"><th style="border:1px solid #666;padding:5px 6px">Offer #</th><th style="border:1px solid #666;padding:5px 6px">Date</th><th style="border:1px solid #666;padding:5px 6px">Status</th><th style="border:1px solid #666;padding:5px 6px">Amount</th></tr></thead>
+        <tbody>${offRows}</tbody>
+      </table>`:''}
+
+      <div style="display:flex;justify-content:flex-end;padding:16px 16px 0">
+        <div style="text-align:center;font-size:${fs}px">
+          <div>For <b>${esc(C.name)}</b></div>
+          <div style="border-top:1px solid #555;width:140px;margin:36px auto 4px"></div>
+          <b>${esc(C.sign||'Authorised Signatory')}</b>
+        </div>
+      </div>
+  `;
+  const spacer=pageBreakSpacer(partA,partB,{pageW:738,headerH:152,contTop:152});
+
+  return `<div style="position:relative;width:794px;min-height:1122px;font-family:Arial,Helvetica,sans-serif;font-size:${fs}px;color:#000;box-sizing:border-box;background-image:url(${LH_B64});background-repeat:repeat-y;background-size:794px 1122px;background-position:top left">
+    <div style="position:relative;z-index:1;padding-top:152px;padding-left:28px;padding-right:28px;padding-bottom:80px">
+      ${partA}
+      ${spacer}
+      ${partB}
+    </div>
+  </div>`;
+}
+async function renderCustStatementToPDF(name){
+  const zone=document.getElementById('pzone');
+  zone.innerHTML=buildCustStatementPDF(name);
+  zone.style.cssText='position:fixed;left:0;top:0;width:794px;background:#fff;z-index:9999;pointer-events:none';
+  await new Promise(r=>setTimeout(r,500));
+  const el=zone.firstElementChild;
+  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
+  zone.innerHTML='';zone.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+  const PW=pdf.internal.pageSize.getWidth(),PH=pdf.internal.pageSize.getHeight();
+  const imgH=(canvas.height/canvas.width)*PW;
+  const JQ=0.82;
+  if(imgH<=PH){pdf.addImage(canvas.toDataURL('image/jpeg',JQ),'JPEG',0,0,PW,PH);}
+  else{let yPx=0;const pxMm=canvas.width/PW;while(yPx<canvas.height){if(yPx>0)pdf.addPage();const sh=Math.min(PH*pxMm,canvas.height-yPx);const sc=document.createElement('canvas');sc.width=canvas.width;sc.height=sh;const sctx=sc.getContext('2d');sctx.fillStyle='#fff';sctx.fillRect(0,0,sc.width,sc.height);sctx.drawImage(canvas,0,yPx,canvas.width,sh,0,0,canvas.width,sh);pdf.addImage(sc.toDataURL('image/jpeg',JQ),'JPEG',0,0,PW,sh/pxMm);yPx+=PH*pxMm;}}
+  return pdf;
+}
+async function downloadCustStatement(name){
+  const custName=name||S.curCustDetail;
+  if(!custName){toast('⚠ Select a customer first');return;}
+  toast('Generating statement…');
+  try{const pdf=await renderCustStatementToPDF(custName);pdf.save('Statement-'+custName.replace(/[^a-z0-9]+/gi,'_')+'.pdf');toast('Statement downloaded ✓');}
+  catch(e){console.error(e);toast('PDF error – try again');}
+}
+
 // ── OFFERS / QUOTATIONS ──
 function autoOfferCust(name){
   const c=S.customers.find(x=>x.name===name);if(!c)return;
@@ -3080,7 +3214,7 @@ function renderCusts(){
     const p=S.payments.filter(x=>x.cust===c.name).reduce((s,x)=>s+V(x.amt),0);
     const bal=Math.max(0,b-a-p);
     const projCount=(c.projects||[]).length;
-    return'<tr><td style="font-weight:700;color:var(--rust);font-size:11px">'+esc(c.custId||'—')+'</td><td style="font-weight:500;cursor:pointer;color:var(--rust)" onclick="viewCust(\''+esc(c.name)+'\')">'+esc(c.name)+'</td><td style="font-size:11px">'+esc(c.gst||'—')+'</td><td>'+esc(c.phone||'—')+'</td><td style="font-size:12px">'+esc(c.email||'—')+'</td><td style="text-align:center">'+(projCount||'—')+'</td><td>'+F(b)+'</td><td style="color:var(--am)">'+F(a)+'</td><td style="color:var(--gn)">'+F(p)+'</td><td style="font-weight:700;color:'+(bal>0?'var(--rd)':'var(--gn)')+'">'+F(bal)+'</td><td><button class="btn bg bsm" onclick="viewCust(\''+esc(c.name)+'\')">🔍</button> <button class="btn bg bsm" onclick="openCustM(\''+c.id+'\')">✏️</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delCust(\''+c.id+'\')">🗑</button></td></tr>';
+    return'<tr><td style="font-weight:700;color:var(--rust);font-size:11px">'+esc(c.custId||'—')+'</td><td style="font-weight:500;cursor:pointer;color:var(--rust)" onclick="viewCust(\''+esc(c.name)+'\')">'+esc(c.name)+'</td><td style="font-size:11px">'+esc(c.gst||'—')+'</td><td>'+esc(c.phone||'—')+'</td><td style="font-size:12px">'+esc(c.email||'—')+'</td><td style="text-align:center">'+(projCount||'—')+'</td><td>'+F(b)+'</td><td style="color:var(--am)">'+F(a)+'</td><td style="color:var(--gn)">'+F(p)+'</td><td style="font-weight:700;color:'+(bal>0?'var(--rd)':'var(--gn)')+'">'+F(bal)+'</td><td><button class="btn bg bsm" onclick="viewCust(\''+esc(c.name)+'\')">🔍</button> <button class="btn bg bsm" onclick="openCustM(\''+c.id+'\')">✏️</button> <button class="btn bg bsm" title="Download Statement" onclick="downloadCustStatement(\''+esc(c.name)+'\')">⬇</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delCust(\''+c.id+'\')">🗑</button></td></tr>';
   }).join(''):'<tr><td colspan="11"><div class="empty"><div class="ei">👥</div><p>No customers yet.</p></div></td></tr>';
 }
 function viewCust(name){
