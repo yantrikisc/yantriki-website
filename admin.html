@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -565,6 +564,26 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
 
   <div class="card"><div class="ch"><h3>Customer-wise Outstanding</h3></div>
     <div class="tw"><table><thead><tr><th>Customer</th><th>Cust. ID</th><th>Invoices</th><th>Total Billed</th><th>Advances</th><th>Payments</th><th>Balance Due</th></tr></thead><tbody id="r-cust-tb"></tbody></table></div>
+  </div>
+
+  <!-- STAFF REPORTS (admin only — contains salary data) -->
+  <div id="r-staff-section">
+  <div class="card"><div class="ch">
+      <h3>🧑‍💼 Employee Details Report</h3>
+      <button class="btn bo bsm" onclick="downloadEmpDetailsCSV()">⬇ Download CSV</button>
+    </div>
+    <div class="tw"><table><thead><tr><th>Code</th><th>Name</th><th>Department</th><th>Designation</th><th>Mobile</th><th>Email</th><th>DOJ</th><th>Gross Salary</th><th>Total Deductions</th></tr></thead><tbody id="r-emp-tb"></tbody></table></div>
+  </div>
+
+  <div class="card"><div class="ch">
+      <h3>🗓 Monthly Attendance Report</h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="month" id="r-att-month" onchange="renderStaffReports()" style="font-size:13px">
+        <button class="btn bo bsm" onclick="downloadAttendanceCSV()">⬇ Download CSV</button>
+      </div>
+    </div>
+    <div class="tw"><table><thead><tr><th>Employee</th><th>P.Days</th><th>PH</th><th>PL</th><th>WO</th><th>CL</th><th>C.Off</th><th>OD</th><th>LWP</th><th>ML</th><th>ABS</th><th>Bal CL</th><th>Bal PL</th><th>Net Payable</th></tr></thead><tbody id="r-att-tb"></tbody></table></div>
+  </div>
   </div>
 </div>
 
@@ -1180,6 +1199,8 @@ window.applyRoleUI=function(role){
   if(historyNav)historyNav.style.display=isStaff()?'none':'';
   const staffNav=document.querySelector('.ni[onclick="go(\'staff\')"]');
   if(staffNav)staffNav.style.display=isStaff()?'none':'';
+  const staffSection=document.getElementById('r-staff-section');
+  if(staffSection)staffSection.style.display=isStaff()?'none':'';
   ['f-usestamp','po-usestamp','offer-usestamp'].forEach(lockStampCheckbox);
   if(typeof renderAll==='function')renderAll();
 };
@@ -2398,6 +2419,8 @@ function renderReports(){
   document.getElementById('r-offer-cust-tb').innerHTML=offerByCust.length?offerByCust.map(c=>
     '<tr><td style="font-weight:500">'+esc(c.name)+'</td><td>'+c.sub+'</td><td style="color:var(--gn);font-weight:600">'+c.finCnt+'</td><td style="color:var(--rd)">'+c.lostCnt+'</td><td>'+F(c.offeredVal)+'</td><td style="font-weight:700;color:var(--gn)">'+F(c.finalVal)+'</td><td>'+c.conv+'%</td></tr>'
   ).join(''):'<tr><td colspan="7"><div class="empty"><p>No offers yet.</p></div></td></tr>';
+
+  renderStaffReports();
 }
 
 // ── RENDER ALL ──
@@ -3149,6 +3172,76 @@ async function dlPayslipPDF(){
   toast('Generating pay slip…');
   try{const pdf=await renderPayslipToPDF(emp,S.curPayslip.month);pdf.save('Payslip-'+emp.name.replace(/[^a-z0-9]+/gi,'_')+'-'+S.curPayslip.month+'.pdf');toast('Pay slip downloaded ✓');}
   catch(e){console.error(e);toast('PDF error – try again');}
+}
+
+// ── STAFF REPORTS (Employee Details + Monthly Attendance) ──
+function csvEsc(s){return '"'+String(s==null?'':s).replace(/"/g,'""')+'"';}
+function downloadCSV(filename,rows){
+  const csv=rows.map(r=>r.map(csvEsc).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function renderStaffReports(){
+  const staffSection=document.getElementById('r-staff-section');
+  if(staffSection)staffSection.style.display=isStaff()?'none':'';
+  if(isStaff())return;
+  const empTb=document.getElementById('r-emp-tb');
+  const attTb=document.getElementById('r-att-tb');
+  const monthInput=document.getElementById('r-att-month');
+  if(!empTb||!attTb||!monthInput)return;
+  if(!monthInput.value)monthInput.value=new Date().toISOString().slice(0,7);
+  const emps=S.employees||[];
+
+  // Employee Details
+  empTb.innerHTML=emps.length?emps.map(e=>
+    '<tr><td style="font-weight:700;color:var(--rust);font-size:11px">'+esc(e.code||'—')+'</td><td style="font-weight:500">'+esc(e.name)+'</td><td>'+esc(e.dept||'—')+'</td><td>'+esc(e.desg||'—')+'</td><td>'+esc(e.mobile||'—')+'</td><td style="font-size:12px">'+esc(e.email||'—')+'</td><td>'+(e.doj?DF(e.doj):'—')+'</td><td style="font-weight:700">'+F(grossSalary(e))+'</td><td style="color:var(--rd)">'+F(totalDeductions(e))+'</td></tr>'
+  ).join(''):'<tr><td colspan="9"><div class="empty"><p>No staff added yet.</p></div></td></tr>';
+
+  // Monthly Attendance
+  const month=monthInput.value;
+  attTb.innerHTML=emps.length?emps.map(e=>{
+    const totalDays=daysInMonth(month);
+    const a=(e.attendance||{})[month];
+    if(!a){
+      return '<tr><td style="font-weight:500">'+esc(e.name)+'</td><td colspan="12" style="text-align:center;color:var(--sl)">No attendance recorded for this month</td></tr>';
+    }
+    const unpaidDays=V(a.lwp)+V(a.abs);
+    const ratio=Math.max(0,(totalDays-unpaidDays))/totalDays;
+    const grossEarn=EMP_EARN_HEADS.reduce((s,h)=>s+Math.round(V((e.salary||{})[h.key])*ratio),0);
+    const netPay=Math.round(grossEarn-totalDeductions(e));
+    return '<tr><td style="font-weight:500">'+esc(e.name)+'</td><td>'+FN(a.pdays)+'</td><td>'+FN(a.ph)+'</td><td>'+FN(a.pl)+'</td><td>'+FN(a.wo)+'</td><td>'+FN(a.cl)+'</td><td>'+FN(a.coff)+'</td><td>'+FN(a.od)+'</td><td style="color:'+(V(a.lwp)>0?'var(--rd)':'')+'">'+FN(a.lwp)+'</td><td>'+FN(a.ml)+'</td><td style="color:'+(V(a.abs)>0?'var(--rd)':'')+'">'+FN(a.abs)+'</td><td>'+FN(a.balcl)+'</td><td>'+FN(a.balpl)+'</td><td style="font-weight:700">'+F(netPay)+'</td></tr>';
+  }).join(''):'<tr><td colspan="14"><div class="empty"><p>No staff added yet.</p></div></td></tr>';
+}
+function downloadEmpDetailsCSV(){
+  const emps=S.employees||[];
+  if(!emps.length){toast('No staff to export');return;}
+  const rows=[['Code','Name','Department','Designation','Mobile','Email','DOJ','UAN','Gross Salary','Total Deductions']];
+  emps.forEach(e=>rows.push([e.code,e.name,e.dept,e.desg,e.mobile,e.email,e.doj?DF(e.doj):'',e.uan,grossSalary(e),totalDeductions(e)]));
+  downloadCSV('employee-details-'+new Date().toISOString().slice(0,10)+'.csv',rows);
+  toast('Employee details downloaded ✓');
+}
+function downloadAttendanceCSV(){
+  const emps=S.employees||[];
+  const month=document.getElementById('r-att-month').value;
+  if(!month){toast('Select a month first');return;}
+  if(!emps.length){toast('No staff to export');return;}
+  const rows=[['Employee','P.Days','PH','PL','WO','CL','C.Off','OD','LWP','ML','ABS','Bal CL','Bal PL','Net Payable']];
+  const totalDays=daysInMonth(month);
+  emps.forEach(e=>{
+    const a=(e.attendance||{})[month];
+    if(!a){rows.push([e.name,'—','—','—','—','—','—','—','—','—','—','—','—','—']);return;}
+    const unpaidDays=V(a.lwp)+V(a.abs);
+    const ratio=Math.max(0,(totalDays-unpaidDays))/totalDays;
+    const grossEarn=EMP_EARN_HEADS.reduce((s,h)=>s+Math.round(V((e.salary||{})[h.key])*ratio),0);
+    const netPay=Math.round(grossEarn-totalDeductions(e));
+    rows.push([e.name,a.pdays,a.ph,a.pl,a.wo,a.cl,a.coff,a.od,a.lwp,a.ml,a.abs,a.balcl,a.balpl,netPay]);
+  });
+  downloadCSV('attendance-'+month+'.csv',rows);
+  toast('Attendance report downloaded ✓');
 }
 
 // ── OFFERS / QUOTATIONS ──
