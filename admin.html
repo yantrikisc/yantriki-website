@@ -321,6 +321,7 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <div class="ni" onclick="go('reports')"><span class="ic">📈</span>Reports</div>
     <div class="ni" onclick="go('po')"><span class="ic">📑</span>Purchase Orders</div>
     <div class="ni" onclick="go('offers')"><span class="ic">📨</span>Offers</div>
+    <div class="ni" onclick="go('calldiary')"><span class="ic">📞</span>Call Diary</div>
     <div class="ni" onclick="go('staff')"><span class="ic">🧑‍💼</span>Staff</div>
     <div class="ni" onclick="go('history')"><span class="ic">🕘</span>History</div>
     <div class="ni" onclick="go('settings')"><span class="ic">⚙️</span>Settings</div>
@@ -608,6 +609,18 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
       </div>
     </div>
     <div class="tw"><table><thead><tr><th>Date &amp; Time</th><th>Action</th><th>Entity</th><th>Details</th><th>By</th></tr></thead><tbody id="history-tb"></tbody></table></div>
+  </div>
+</div>
+
+<div id="page-calldiary" class="page">
+  <div class="sg4" id="cd-kpi"></div>
+  <div class="card"><div class="ch"><h3>📞 Call Diary</h3>
+      <div style="display:flex;gap:8px">
+        <button class="btn bo bsm" id="cd-notify-btn" onclick="requestCallNotifyPermission()">🔔 Enable Call Reminder Notifications</button>
+        <button class="btn bp bsm" onclick="openNewCallRecord()">＋ New Contact</button>
+      </div>
+    </div>
+    <div class="tw"><table><thead><tr><th>Name / Contact</th><th>Phone(s)</th><th>Last Called</th><th>Picked Up</th><th>Last Response</th><th>Next Reminder</th><th>Repeat Every</th><th>Actions</th></tr></thead><tbody id="cd-tb"></tbody></table></div>
   </div>
 </div>
 
@@ -1064,6 +1077,54 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
   </div>
 </div></div>
 
+<div id="call-modal" class="mo" style="display:none"><div class="md" style="max-width:640px">
+  <div class="mh"><h3 id="call-mt">New Contact</h3><button class="mc" onclick="closeM('call-modal')">×</button></div>
+  <div class="mb">
+    <div class="fgrid" style="margin-bottom:10px">
+      <div class="fg full"><label>Label / Party Name <span style="font-weight:400;font-size:10px;color:var(--sl);text-transform:none;letter-spacing:0">(e.g. company or family name — optional if only one contact)</span></label><input type="text" id="call-title" placeholder="e.g. R H Engineering"></div>
+    </div>
+    <div class="sl">Names &amp; Phone Numbers</div>
+    <div id="call-contacts" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px"></div>
+    <button class="btn bo bsm" onclick="addContactRow()">＋ Add Another Number</button>
+
+    <div class="sl" style="margin-top:14px">Reminder Settings</div>
+    <div class="fgrid">
+      <div class="fg"><label>Next Reminder Date</label><input type="date" id="call-reminder"></div>
+      <div class="fg"><label>Auto Repeat Every (days) <span style="font-weight:400;font-size:10px;color:var(--sl);text-transform:none;letter-spacing:0">(0 = no auto repeat)</span></label><input type="number" id="call-repeat" value="0" min="0"></div>
+      <div class="fg full"><label>Notes</label><textarea id="call-notes" rows="2"></textarea></div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn bo" onclick="closeM('call-modal')">Cancel</button>
+    <button class="btn bp" onclick="saveCallRecord()">💾 Save Contact</button>
+  </div>
+</div></div>
+
+<div id="logcall-modal" class="mo" style="display:none"><div class="md" style="max-width:480px">
+  <div class="mh"><h3 id="logcall-mt">Log a Call</h3><button class="mc" onclick="closeM('logcall-modal')">×</button></div>
+  <div class="mb">
+    <div class="fgrid">
+      <div class="fg full"><label>Called Number</label><select id="logcall-contact"></select></div>
+      <div class="fg"><label>Date &amp; Time</label><input type="datetime-local" id="logcall-date"></div>
+      <div class="fg"><label>Picked Up?</label><select id="logcall-picked" onchange="toggleLogcallResponse()"><option value="yes">Yes</option><option value="no">No</option></select></div>
+      <div class="fg full" id="logcall-response-wrap"><label>Their Response</label><textarea id="logcall-response" rows="2" placeholder="What did they say?"></textarea></div>
+      <div class="fg"><label>Next Reminder</label><select id="logcall-nextmode" onchange="toggleLogcallNext()"><option value="auto">Use Auto-Repeat Setting</option><option value="days">Call back in X days</option><option value="date">Pick a specific date</option><option value="none">No reminder</option></select></div>
+      <div class="fg" id="logcall-days-wrap" style="display:none"><label>Call back in (days)</label><input type="number" id="logcall-days" value="3" min="1"></div>
+      <div class="fg" id="logcall-date-wrap" style="display:none"><label>Reminder Date</label><input type="date" id="logcall-nextdate"></div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn bo" onclick="closeM('logcall-modal')">Cancel</button>
+    <button class="btn bp" onclick="saveLogCall()">💾 Save Call Log</button>
+  </div>
+</div></div>
+
+<div id="callhistory-modal" class="mo" style="display:none"><div class="md" style="max-width:560px">
+  <div class="mh"><h3 id="callhistory-mt">Call History</h3><button class="mc" onclick="closeM('callhistory-modal')">×</button></div>
+  <div class="mb"><div class="tw"><table><thead><tr><th>Date</th><th>Number</th><th>Picked Up</th><th>Response</th></tr></thead><tbody id="callhistory-tb"></tbody></table></div></div>
+  <div class="mf"><button class="btn bo" onclick="closeM('callhistory-modal')">Close</button></div>
+</div></div>
+
 <div id="sup-modal" class="mo" style="display:none"><div class="md" style="max-width:520px">
   <div class="mh"><h3 id="sup-mt">Add Supplier</h3><button class="mc" onclick="closeM('sup-modal')">×</button></div>
   <div class="mb">
@@ -1205,9 +1266,9 @@ window.applyRoleUI=function(role){
   if(typeof renderAll==='function')renderAll();
 };
 let S={
-  invoices:[],products:[],customers:[],advances:[],payments:[],purchaseOrders:[],suppliers:[],offers:[],history:[],employees:[],
+  invoices:[],products:[],customers:[],advances:[],payments:[],purchaseOrders:[],suppliers:[],offers:[],history:[],employees:[],callDiary:[],
   nextN:1,nextAdv:1,nextPay:1,nextCust:1,nextPO:1,nextOffer:1,
-  eInvId:null,eProdId:null,eCustId:null,eAdvId:null,ePayId:null,ePOId:null,eOfferId:null,eEmpId:null,
+  eInvId:null,eProdId:null,eCustId:null,eAdvId:null,ePayId:null,ePOId:null,eOfferId:null,eEmpId:null,eCallId:null,
   curPrev:null,curPOPrev:null,curOfferPrev:null,fStat:'all',fTxt:'',rP:'monthly',
   cfg:{name:'Yantriki Suppliers and Consultancy',gst:'23AADFY9269N1ZD',pan:'AADFY9269N',phone:'8815184776',email:'info@yantrikisc.in',a1:'Plot No. 347, Mandakini Kolar Road',a2:'Bhopal (MP) 462042',juris:'Bhopal',bank:'',aname:'',acno:'',ifsc:'',branch:'',actype:'Current',upi:'',prefix:'YSC',gsttype:'intrastate',sign:'Authorised Signatory',terms:30,footer:'Delivery:- Freight Charges FREE ON ROAD',poprefix:'YSC-PO',potaxtype:'igst',potaxpct:18,posign:'Authorised Signatory',podel:'',popt:'',pobill:'',ponotes:'',offerprefix:'YSC-OFR',offersign:'Authorised Signatory',offerfontsize:'11',offerpricenote:'The below quoted prices are inclusive of GST@18%, Transportation to site and Insurance.',offernotes:'Looking forward for your valuable order.',stampInv:false,stampPO:false,stampOffer:true}
 };
@@ -1244,8 +1305,8 @@ function fieldDiff(oldObj,newObj,fieldMap){
 }
 
 // ── STORAGE ──
-function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,history:S.history,employees:S.employees,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,cfg:S.cfg});}
-function applyData(raw){try{const p=JSON.parse(raw);S.invoices=p.invoices||[];S.products=p.products||[];S.customers=p.customers||[];S.advances=p.advances||[];S.payments=p.payments||[];S.purchaseOrders=p.purchaseOrders||[];S.suppliers=p.suppliers||[];S.offers=p.offers||[];S.history=p.history||[];S.employees=p.employees||[];pruneHistory();S.nextN=p.nextN||1;S.nextAdv=p.nextAdv||1;S.nextPay=p.nextPay||1;S.nextCust=p.nextCust||1;S.nextPO=p.nextPO||1;S.nextOffer=p.nextOffer||1;S.cfg=Object.assign({},S.cfg,p.cfg||{});backfillCustIds();return true;}catch(e){return false;}}
+function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,history:S.history,employees:S.employees,callDiary:S.callDiary,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,cfg:S.cfg});}
+function applyData(raw){try{const p=JSON.parse(raw);S.invoices=p.invoices||[];S.products=p.products||[];S.customers=p.customers||[];S.advances=p.advances||[];S.payments=p.payments||[];S.purchaseOrders=p.purchaseOrders||[];S.suppliers=p.suppliers||[];S.offers=p.offers||[];S.history=p.history||[];S.employees=p.employees||[];S.callDiary=p.callDiary||[];pruneHistory();S.nextN=p.nextN||1;S.nextAdv=p.nextAdv||1;S.nextPay=p.nextPay||1;S.nextCust=p.nextCust||1;S.nextPO=p.nextPO||1;S.nextOffer=p.nextOffer||1;S.cfg=Object.assign({},S.cfg,p.cfg||{});backfillCustIds();return true;}catch(e){return false;}}
 async function persist(){
   const d=payload();
   try{localStorage.setItem(STORE_KEY,d);}catch(e){}
@@ -1284,7 +1345,7 @@ function doReset(){
   // Reset all data, keep settings/cfg intact
   setTimeout(()=>{
     S.invoices=[];S.products=[];S.customers=[];S.advances=[];S.payments=[];
-    S.purchaseOrders=[];S.suppliers=[];S.offers=[];S.history=[];S.employees=[];
+    S.purchaseOrders=[];S.suppliers=[];S.offers=[];S.history=[];S.employees=[];S.callDiary=[];
     S.nextN=1;S.nextAdv=1;S.nextPay=1;S.nextCust=1;S.nextPO=1;S.nextOffer=1;
     S.eInvId=null;S.eProdId=null;S.eCustId=null;S.eAdvId=null;S.ePayId=null;S.ePOId=null;S.eSupId=null;S.eOfferId=null;
     S.curPrev=null;S.curPOPrev=null;S.curOfferPrev=null;S.fStat='all';S.fTxt='';
@@ -1341,8 +1402,8 @@ function custByAny(val){
 }
 
 // ── NAVIGATION ──
-const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','offers','staff','history','settings'];
-const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',offers:'Offers',staff:'Staff',history:'Activity History',settings:'Settings'};
+const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','offers','staff','calldiary','history','settings'];
+const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',offers:'Offers',staff:'Staff',calldiary:'Call Diary',history:'Activity History',settings:'Settings'};
 const TOP_BTN_MAP={
   dashboard:null, invoices:['＋ New Invoice','openNewInv'],
   advances:['＋ Record Advance','openAdvM'], payments:['＋ Record Payment','openPayM'],
@@ -1376,6 +1437,7 @@ function go(p){
   if(p==='reports')renderReports();
   if(p==='history')renderHistory();
   if(p==='staff')renderEmpTbl();
+  if(p==='calldiary')renderCallDiaryTbl();
   renderAll();
 }
 document.getElementById('top-btn').addEventListener('click',function(){
@@ -3244,6 +3306,240 @@ function downloadAttendanceCSV(){
   toast('Attendance report downloaded ✓');
 }
 
+// ── CALL DIARY ──
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function reminderStatus(rec){
+  if(!rec.reminderDate)return 'none';
+  const t=todayStr();
+  if(rec.reminderDate<t)return 'overdue';
+  if(rec.reminderDate===t)return 'today';
+  return 'upcoming';
+}
+function lastCall(rec){
+  const calls=rec.calls||[];
+  if(!calls.length)return null;
+  return calls.slice().sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+}
+function renderCallDiaryTbl(){
+  const tb=document.getElementById('cd-tb');if(!tb)return;
+  const recs=S.callDiary||[];
+  const overdue=recs.filter(r=>reminderStatus(r)==='overdue').length;
+  const dueToday=recs.filter(r=>reminderStatus(r)==='today').length;
+  const weekAhead=new Date();weekAhead.setDate(weekAhead.getDate()+7);
+  const upcoming=recs.filter(r=>{const s=reminderStatus(r);return s==='upcoming'&&r.reminderDate<=weekAhead.toISOString().slice(0,10);}).length;
+  document.getElementById('cd-kpi').innerHTML=
+    '<div class="sc"><div class="sc-l">Total Contacts</div><div class="sc-v">'+recs.length+'</div></div>'+
+    '<div class="sc" style="background:linear-gradient(135deg,#dc2626,#f87171);color:#fff"><div class="sc-l" style="color:#fee">Overdue Calls</div><div class="sc-v" style="color:#fff">'+overdue+'</div></div>'+
+    '<div class="sc" style="background:linear-gradient(135deg,#d97706,#fbbf24);color:#fff"><div class="sc-l" style="color:#fff3">Due Today</div><div class="sc-v" style="color:#fff">'+dueToday+'</div></div>'+
+    '<div class="sc"><div class="sc-l">Upcoming (7 days)</div><div class="sc-v">'+upcoming+'</div></div>';
+  tb.innerHTML=recs.length?recs.slice().sort((a,b)=>{
+    const sa=reminderStatus(a),sb=reminderStatus(b);
+    const rank={overdue:0,today:1,upcoming:2,none:3};
+    return rank[sa]-rank[sb]||(a.reminderDate||'').localeCompare(b.reminderDate||'');
+  }).map(r=>{
+    const contacts=r.contacts||[];
+    const title=r.title||(contacts[0]?contacts[0].name:'—');
+    const phones=contacts.map(c=>esc(c.name)+': '+esc(c.phone)).join('<br>')||'—';
+    const lc=lastCall(r);
+    const lastCalledStr=lc?DF(lc.date.slice(0,10))+' '+new Date(lc.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'—';
+    const pickedStr=lc?(lc.pickedUp?'<span style="color:var(--gn);font-weight:600">Yes</span>':'<span style="color:var(--rd);font-weight:600">No</span>'):'—';
+    const respStr=lc&&lc.pickedUp?esc(lc.response||'—'):(lc?'<span style="color:var(--sl)">Not picked up</span>':'—');
+    const st=reminderStatus(r);
+    const remColor=st==='overdue'?'var(--rd)':(st==='today'?'#B45309':(st==='upcoming'?'var(--gn)':'var(--sl)'));
+    const remStr=r.reminderDate?('<span style="color:'+remColor+';font-weight:700">'+DF(r.reminderDate)+(st==='overdue'?' (Overdue)':st==='today'?' (Today)':'')+'</span>'):'—';
+    return '<tr><td style="font-weight:600">'+esc(title)+(r.notes?'<div style="font-size:10px;color:var(--sl);font-weight:400;margin-top:2px">'+esc(r.notes)+'</div>':'')+'</td>'+
+      '<td style="font-size:12px">'+phones+'</td>'+
+      '<td style="font-size:12px">'+lastCalledStr+'</td>'+
+      '<td>'+pickedStr+'</td>'+
+      '<td style="font-size:12px;max-width:180px">'+respStr+'</td>'+
+      '<td>'+remStr+'</td>'+
+      '<td>'+(V(r.repeatDays)>0?('Every '+r.repeatDays+' days'):'—')+'</td>'+
+      '<td style="white-space:nowrap"><button class="btn bg bsm" title="Log Call" onclick="openLogCall(\''+r.id+'\')">📞</button> <button class="btn bg bsm" title="History" onclick="viewCallHistory(\''+r.id+'\')">🕘</button> <button class="btn bg bsm" onclick="editCallRecord(\''+r.id+'\')">✏️</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delCallRecord(\''+r.id+'\')">🗑</button></td></tr>';
+  }).join(''):'<tr><td colspan="8"><div class="empty"><div class="ei">📞</div><p>No contacts added yet.</p></div></td></tr>';
+}
+function addContactRow(name,phone){
+  const wrap=document.getElementById('call-contacts');
+  const rid=uid();
+  const row=document.createElement('div');
+  row.id='ccrow-'+rid;
+  row.style.cssText='display:flex;gap:8px;align-items:center';
+  row.innerHTML=
+    '<input type="text" placeholder="Name" value="'+esc(name||'')+'" data-f="name" style="flex:1">'+
+    '<input type="tel" placeholder="Phone number" value="'+esc(phone||'')+'" data-f="phone" style="flex:1">'+
+    '<button class="btn bo bsm" onclick="document.getElementById(\'ccrow-'+rid+'\').remove()">✕</button>';
+  wrap.appendChild(row);
+}
+function getContactRows(){
+  return Array.from(document.querySelectorAll('#call-contacts > div')).map(row=>({
+    name:row.querySelector('[data-f="name"]').value.trim(),
+    phone:row.querySelector('[data-f="phone"]').value.trim()
+  })).filter(c=>c.name||c.phone);
+}
+function openNewCallRecord(){
+  S.eCallId=null;
+  document.getElementById('call-mt').textContent='New Contact';
+  document.getElementById('call-title').value='';
+  document.getElementById('call-reminder').value='';
+  document.getElementById('call-repeat').value=0;
+  document.getElementById('call-notes').value='';
+  document.getElementById('call-contacts').innerHTML='';
+  addContactRow();
+  openM('call-modal');
+}
+function editCallRecord(id){
+  const r=S.callDiary.find(x=>x.id===id);if(!r)return;
+  S.eCallId=id;
+  document.getElementById('call-mt').textContent='Edit Contact';
+  document.getElementById('call-title').value=r.title||'';
+  document.getElementById('call-reminder').value=r.reminderDate||'';
+  document.getElementById('call-repeat').value=r.repeatDays||0;
+  document.getElementById('call-notes').value=r.notes||'';
+  document.getElementById('call-contacts').innerHTML='';
+  (r.contacts||[]).forEach(c=>addContactRow(c.name,c.phone));
+  if(!(r.contacts||[]).length)addContactRow();
+  openM('call-modal');
+}
+function saveCallRecord(){
+  const contacts=getContactRows();
+  if(!contacts.length){toast('⚠ Add at least one name/phone');return;}
+  const isNewCall=!S.eCallId;
+  const oldRec=S.eCallId?S.callDiary.find(x=>x.id===S.eCallId):null;
+  const rec={
+    id:S.eCallId||uid(),
+    title:document.getElementById('call-title').value.trim(),
+    contacts,
+    reminderDate:document.getElementById('call-reminder').value,
+    repeatDays:V(document.getElementById('call-repeat').value),
+    notes:document.getElementById('call-notes').value,
+    calls:(oldRec&&oldRec.calls)||[]
+  };
+  if(S.eCallId){const idx=S.callDiary.findIndex(x=>x.id===S.eCallId);S.callDiary[idx]=rec;}
+  else{S.callDiary.push(rec);}
+  const label=rec.title||contacts[0].name;
+  logHistory(isNewCall?'Created':'Edited','Call Contact',label);
+  persist();renderCallDiaryTbl();closeM('call-modal');toast('✓ Contact saved');
+}
+function delCallRecord(id){
+  if(!confirm('Delete this contact and its call history?'))return;
+  const r=S.callDiary.find(x=>x.id===id);
+  S.callDiary=S.callDiary.filter(x=>x.id!==id);
+  logHistory('Deleted','Call Contact',r?(r.title||(r.contacts[0]&&r.contacts[0].name)):id);
+  persist();renderCallDiaryTbl();toast('Deleted');
+}
+function toggleLogcallResponse(){
+  const picked=document.getElementById('logcall-picked').value;
+  document.getElementById('logcall-response-wrap').style.display=picked==='yes'?'':'none';
+}
+function toggleLogcallNext(){
+  const mode=document.getElementById('logcall-nextmode').value;
+  document.getElementById('logcall-days-wrap').style.display=mode==='days'?'':'none';
+  document.getElementById('logcall-date-wrap').style.display=mode==='date'?'':'none';
+}
+function openLogCall(id){
+  const r=S.callDiary.find(x=>x.id===id);if(!r)return;
+  S.eCallId=id;
+  document.getElementById('logcall-mt').textContent='Log a Call — '+(r.title||r.contacts[0].name);
+  const sel=document.getElementById('logcall-contact');
+  sel.innerHTML=(r.contacts||[]).map(c=>'<option value="'+esc(c.phone)+'">'+esc(c.name)+' — '+esc(c.phone)+'</option>').join('');
+  const now=new Date();
+  now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('logcall-date').value=now.toISOString().slice(0,16);
+  document.getElementById('logcall-picked').value='yes';
+  document.getElementById('logcall-response').value='';
+  document.getElementById('logcall-nextmode').value=V(r.repeatDays)>0?'auto':'days';
+  document.getElementById('logcall-days').value=7;
+  document.getElementById('logcall-nextdate').value='';
+  toggleLogcallResponse();toggleLogcallNext();
+  openM('logcall-modal');
+}
+function saveLogCall(){
+  const r=S.callDiary.find(x=>x.id===S.eCallId);if(!r)return;
+  const date=document.getElementById('logcall-date').value;
+  if(!date){toast('⚠ Select date & time');return;}
+  const pickedUp=document.getElementById('logcall-picked').value==='yes';
+  const response=document.getElementById('logcall-response').value;
+  const contactPhone=document.getElementById('logcall-contact').value;
+  if(!r.calls)r.calls=[];
+  r.calls.push({id:uid(),date,phone:contactPhone,pickedUp,response});
+  const mode=document.getElementById('logcall-nextmode').value;
+  const callDateOnly=date.slice(0,10);
+  if(mode==='auto'){
+    const days=V(r.repeatDays)||7;
+    const d=new Date(callDateOnly);d.setDate(d.getDate()+days);
+    r.reminderDate=d.toISOString().slice(0,10);
+  } else if(mode==='days'){
+    const days=V(document.getElementById('logcall-days').value)||1;
+    const d=new Date(callDateOnly);d.setDate(d.getDate()+days);
+    r.reminderDate=d.toISOString().slice(0,10);
+  } else if(mode==='date'){
+    r.reminderDate=document.getElementById('logcall-nextdate').value||r.reminderDate;
+  } else {
+    r.reminderDate='';
+  }
+  logHistory('Call Logged','Call Contact',(r.title||r.contacts[0].name)+' — '+(pickedUp?'Picked up':'No answer'));
+  persist();renderCallDiaryTbl();closeM('logcall-modal');toast('✓ Call logged');
+}
+function viewCallHistory(id){
+  const r=S.callDiary.find(x=>x.id===id);if(!r)return;
+  document.getElementById('callhistory-mt').textContent='Call History — '+(r.title||r.contacts[0].name);
+  const calls=(r.calls||[]).slice().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  document.getElementById('callhistory-tb').innerHTML=calls.length?calls.map(c=>
+    '<tr><td style="font-size:12px">'+DF(c.date.slice(0,10))+' '+new Date(c.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+'</td><td style="font-size:12px">'+esc(c.phone||'—')+'</td><td>'+(c.pickedUp?'<span style="color:var(--gn);font-weight:600">Yes</span>':'<span style="color:var(--rd);font-weight:600">No</span>')+'</td><td style="font-size:12px">'+esc(c.pickedUp?(c.response||'—'):'—')+'</td></tr>'
+  ).join(''):'<tr><td colspan="4"><div class="empty"><p>No calls logged yet.</p></div></td></tr>';
+  openM('callhistory-modal');
+}
+
+// ── CALL REMINDER BROWSER NOTIFICATIONS ──
+// Note: these are real OS/browser notifications (via the Notification API), shown
+// while this tab/browser is open — not server-push notifications that arrive when
+// the browser is fully closed. That would require a backend (e.g. Firebase Cloud
+// Messaging + a server) which this app doesn't have.
+const NOTIFY_KEY='ynk-notified-calls';
+function getNotifiedMap(){try{return JSON.parse(localStorage.getItem(NOTIFY_KEY))||{};}catch(e){return{};}}
+function setNotified(id){try{const m=getNotifiedMap();m[id]=todayStr();localStorage.setItem(NOTIFY_KEY,JSON.stringify(m));}catch(e){}}
+function updateNotifyBtnUI(){
+  const btn=document.getElementById('cd-notify-btn');if(!btn)return;
+  if(!('Notification' in window)){btn.textContent='🔕 Notifications not supported in this browser';btn.disabled=true;return;}
+  if(Notification.permission==='granted'){btn.textContent='🔔 Call Reminder Notifications: ON';btn.disabled=true;}
+  else if(Notification.permission==='denied'){btn.textContent='🔕 Notifications Blocked (check browser settings)';btn.disabled=true;}
+  else{btn.textContent='🔔 Enable Call Reminder Notifications';btn.disabled=false;}
+}
+function requestCallNotifyPermission(){
+  if(!('Notification' in window)){toast('Notifications are not supported in this browser');return;}
+  Notification.requestPermission().then(perm=>{
+    updateNotifyBtnUI();
+    if(perm==='granted'){toast('✓ Call reminder notifications enabled');checkCallReminders(true);}
+    else if(perm==='denied'){toast('Notifications blocked — enable them in your browser\'s site settings to use this');}
+  });
+}
+function checkCallReminders(forceReNotifyToday){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const recs=S.callDiary||[];
+  const notified=getNotifiedMap();
+  recs.forEach(r=>{
+    const st=reminderStatus(r);
+    if(st!=='overdue'&&st!=='today')return;
+    if(!forceReNotifyToday&&notified[r.id]===todayStr())return;
+    const label=r.title||(r.contacts[0]&&r.contacts[0].name)||'Contact';
+    const phone=(r.contacts[0]&&r.contacts[0].phone)||'';
+    const title=st==='overdue'?'⚠️ Overdue Call Reminder':'📞 Call Reminder — Today';
+    try{
+      const n=new Notification(title,{body:label+(phone?' — '+phone:'')+(r.notes?'\n'+r.notes:''),tag:'call-'+r.id});
+      n.onclick=()=>{window.focus();closeM('call-modal');go('calldiary');n.close();};
+    }catch(e){}
+    setNotified(r.id);
+  });
+}
+function initCallReminderNotifications(){
+  updateNotifyBtnUI();
+  if('Notification' in window && Notification.permission==='granted'){
+    checkCallReminders();
+  }
+  // Re-check periodically while the tab stays open, and whenever it becomes visible again
+  setInterval(()=>checkCallReminders(),5*60*1000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkCallReminders();});
+}
+
 // ── OFFERS / QUOTATIONS ──
 function autoOfferCust(name){
   const c=S.customers.find(x=>x.name===name);if(!c)return;
@@ -3688,6 +3984,7 @@ window.onAuthReady = async function(){
   if(!S.products||!S.products.length)seedProducts();
   renderAll();
   updSidebar();
+  initCallReminderNotifications();
 };
 </script>
 </body>
