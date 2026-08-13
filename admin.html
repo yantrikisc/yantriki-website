@@ -1284,12 +1284,22 @@ function logHistory(action,entity,detail){
   S.history.push({ts:Date.now(),action,entity,detail:detail||'',role:(typeof USER_ROLE!=='undefined'&&USER_ROLE)?USER_ROLE:'admin'});
   pruneHistory();
 }
-function fmtVal(v){
+function fmtVal(v,label){
   if(v===undefined||v===null||v==='')return '—';
-  if(Array.isArray(v))return v.length+' item(s)';
+  if(Array.isArray(v)){
+    if(!v.length)return '—';
+    // For project arrays, list names
+    if(v[0]&&typeof v[0]==='object'&&v[0].name)return v.map(x=>x.name).join(', ');
+    return v.length+' item(s)';
+  }
   if(typeof v==='boolean')return v?'Yes':'No';
+  // Rupee formatting for fields that look like money amounts
+  const lbl=(label||'').toLowerCase();
+  if((lbl.includes('total')||lbl.includes('amount')||lbl.includes('rate')||lbl.includes('salary')||lbl.includes('grand')||lbl.includes('price'))&&!isNaN(parseFloat(v)))
+    return '₹'+parseFloat(v).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
   return String(v);
 }
+function fmtValL(v,label){return fmtVal(v,label);}
 // Compares oldObj vs newObj over the given {key:label} map and returns a
 // human-readable "Field: old → new" summary of only what actually changed.
 function fieldDiff(oldObj,newObj,fieldMap){
@@ -1299,7 +1309,7 @@ function fieldDiff(oldObj,newObj,fieldMap){
     const newV=newObj?newObj[key]:undefined;
     const oldS=JSON.stringify(oldV);
     const newS=JSON.stringify(newV);
-    if(oldS!==newS)changes.push(fieldMap[key]+': '+fmtVal(oldV)+' → '+fmtVal(newV));
+    if(oldS!==newS)changes.push(fieldMap[key]+': '+fmtVal(oldV,fieldMap[key])+' → '+fmtVal(newV,fieldMap[key]));
   }
   return changes.join('; ');
 }
@@ -1811,7 +1821,18 @@ function saveInv(type){
   upsertCust({name:bname,gst:inv.bgst,phone:inv.bph,email:inv.bem,addr:inv.baddr});
   const savedCust=S.customers.find(x=>x.name===bname);
   if(savedCust)inv.bcustid=savedCust.custId||inv.bcustid;
-  const invDiff=isNew?('Customer: '+bname+'; Total: '+F(grand)+'; Status: '+status):(fieldDiff(oldInv,inv,{bname:'Customer',date:'Date',status:'Status',grand:'Total',notes:'Notes',po:'PO Ref',useStamp:'Stamp'})||'No field changes detected');
+  const gstAmt=V(inv.cgstT)+V(inv.sgstT)+V(inv.igstT);
+  const invDiff=isNew?(
+    'Customer: '+bname+
+    '; Date: '+DF(inv.date)+
+    '; Items: '+items.length+
+    '; Taxable: '+F(taxT)+
+    '; GST: '+F(gstAmt)+
+    '; Grand Total: '+F(grand)+
+    '; Status: '+status+
+    (inv.po?'; PO Ref: '+inv.po:'')+
+    (inv.notes?'; Notes: '+inv.notes:'')
+  ):(fieldDiff(oldInv,inv,{bname:'Customer',date:'Date',status:'Status',taxT:'Taxable Amount',grand:'Grand Total',notes:'Notes',po:'PO Ref',useStamp:'Stamp',priceIncGst:'Price Incl. GST'})||'No field changes detected');
   logHistory(isNew?'Created':'Edited','Invoice',num+' — '+invDiff);
   persist();closeM('inv-modal');renderAll();toast('Invoice saved ✓');
 }
@@ -1821,8 +1842,8 @@ function upsertCust(d){
   if(!c){S.customers.push({id:uid(),custId:newCustId(),projects:[],...d});}
   else{if(!c.gst&&d.gst)c.gst=d.gst;if(!c.phone&&d.phone)c.phone=d.phone;if(!c.email&&d.email)c.email=d.email;if(!c.addr&&d.addr)c.addr=d.addr;if(!c.custId)c.custId=newCustId();if(!Array.isArray(c.projects))c.projects=[];}
 }
-function delInv(id){if(blockIfStaff('⚠ Deleting invoices is restricted for your account'))return;if(!confirm('Delete invoice?'))return;const inv=S.invoices.find(i=>i.id===id);S.invoices=S.invoices.filter(i=>i.id!==id);logHistory('Deleted','Invoice',inv?inv.number+' — '+inv.bname:id);persist();renderAll();toast('Deleted');}
-function chStat(id,val){if(!val)return;const inv=S.invoices.find(i=>i.id===id);if(inv){inv.status=val;logHistory('Status Change','Invoice',inv.number+' → '+val);persist();renderAll();toast('Updated');}}
+function delInv(id){if(blockIfStaff('⚠ Deleting invoices is restricted for your account'))return;if(!confirm('Delete invoice?'))return;const inv=S.invoices.find(i=>i.id===id);S.invoices=S.invoices.filter(i=>i.id!==id);logHistory('Deleted','Invoice',inv?(inv.number+' — Customer: '+inv.bname+'; Date: '+DF(inv.date)+'; Grand Total: '+F(inv.grand)+'; Status: '+inv.status+(inv.po?'; PO Ref: '+inv.po:'')):id);persist();renderAll();toast('Deleted');}
+function chStat(id,val){if(!val)return;const inv=S.invoices.find(i=>i.id===id);if(inv){const oldStat=inv.status;inv.status=val;logHistory('Status Change','Invoice',inv.number+' ('+esc(inv.bname)+') — Status: '+oldStat+' → '+val+'; Grand Total: '+F(inv.grand));persist();renderAll();toast('Updated');}}
 
 // ── ADVANCES ──
 function openAdvM(id){
@@ -1844,11 +1865,23 @@ function saveAdv(){
   const cust=document.getElementById('adv-cust').value.trim();if(!cust){toast('Enter customer');return;}
   const amt=V(document.getElementById('adv-amt').value);if(!amt){toast('Enter amount');return;}
   const adv={id:S.eAdvId||uid(),ref:'ADV-'+String(S.nextAdv).padStart(3,'0'),cust,invNum:document.getElementById('adv-inv').value,date:document.getElementById('adv-date').value,amt,mode:document.getElementById('adv-mode').value,ref2:document.getElementById('adv-ref').value,note:document.getElementById('adv-note').value};
-  if(S.eAdvId){const i=S.advances.findIndex(x=>x.id===S.eAdvId);S.advances[i]=adv;}
-  else{S.advances.push(adv);S.nextAdv++;}
+  const isNewAdv=!S.eAdvId;
+  if(isNewAdv){S.advances.push(adv);S.nextAdv++;}
+  else{const i=S.advances.findIndex(x=>x.id===S.eAdvId);const oldAdv=S.advances[i];S.advances[i]=adv;
+    const advDiff=fieldDiff(oldAdv,adv,{cust:'Customer',amt:'Amount',invNum:'Invoice Ref',date:'Date',mode:'Payment Mode',ref2:'Bank Ref / UTR',note:'Note'})||'No changes detected';
+    logHistory('Edited','Advance',adv.ref+' — '+advDiff);
+  }
+  if(isNewAdv){
+    const parts=['Customer: '+adv.cust,'Amount: ₹'+adv.amt.toLocaleString('en-IN'),'Mode: '+adv.mode];
+    if(adv.invNum)parts.push('Invoice: '+adv.invNum);
+    if(adv.date)parts.push('Date: '+DF(adv.date));
+    if(adv.ref2)parts.push('Bank Ref: '+adv.ref2);
+    if(adv.note)parts.push('Note: '+adv.note);
+    logHistory('Created','Advance',adv.ref+' — '+parts.join('; '));
+  }
   persist();closeM('adv-modal');renderAll();toast('Advance saved ✓');
 }
-function delAdv(id){if(!confirm('Delete?'))return;const a=S.advances.find(x=>x.id===id);S.advances=S.advances.filter(a=>a.id!==id);logHistory('Deleted','Advance',a?a.ref+' — '+a.cust:id);persist();renderAll();toast('Deleted');}
+function delAdv(id){if(!confirm('Delete?'))return;const a=S.advances.find(x=>x.id===id);S.advances=S.advances.filter(a=>a.id!==id);logHistory('Deleted','Advance',a?(a.ref+' — Customer: '+a.cust+'; Amount: ₹'+V(a.amt).toLocaleString('en-IN')+(a.invNum?'; Invoice: '+a.invNum:'')+(a.mode?'; Mode: '+a.mode:'')+(a.date?'; Date: '+DF(a.date):'')):id);persist();renderAll();toast('Deleted');}
 
 // ── PAYMENTS ──
 function openPayM(id,prefInv){
@@ -1886,12 +1919,24 @@ function savePay(){
   const amt=V(document.getElementById('pay-amt').value);if(!amt){toast('Enter amount');return;}
   const invNum=document.getElementById('pay-inv').value;
   const pay={id:S.ePayId||uid(),ref:'PAY-'+String(S.nextPay).padStart(3,'0'),cust,invNum,date:document.getElementById('pay-date').value,amt,mode:document.getElementById('pay-mode').value,ref2:document.getElementById('pay-ref').value,note:document.getElementById('pay-note').value};
-  if(S.ePayId){const i=S.payments.findIndex(x=>x.id===S.ePayId);S.payments[i]=pay;}
-  else{S.payments.push(pay);S.nextPay++;}
+  const isNewPay=!S.ePayId;
+  if(isNewPay){S.payments.push(pay);S.nextPay++;}
+  else{const i=S.payments.findIndex(x=>x.id===S.ePayId);const oldPay=S.payments[i];S.payments[i]=pay;
+    const payDiff=fieldDiff(oldPay,pay,{cust:'Customer',amt:'Amount',invNum:'Invoice Ref',date:'Date',mode:'Payment Mode',ref2:'Bank Ref / UTR',note:'Note'})||'No changes detected';
+    logHistory('Edited','Payment',pay.ref+' — '+payDiff);
+  }
+  if(isNewPay){
+    const parts=['Customer: '+pay.cust,'Amount: ₹'+pay.amt.toLocaleString('en-IN'),'Mode: '+pay.mode];
+    if(pay.invNum)parts.push('Invoice: '+pay.invNum);
+    if(pay.date)parts.push('Date: '+DF(pay.date));
+    if(pay.ref2)parts.push('Bank Ref: '+pay.ref2);
+    if(pay.note)parts.push('Note: '+pay.note);
+    logHistory('Created','Payment',pay.ref+' — '+parts.join('; '));
+  }
   if(invNum){const inv=S.invoices.find(i=>i.number===invNum);if(inv){const bal=invBal(inv);inv.status=bal<=0?'paid':'partial';}}
   persist();closeM('pay-modal');renderAll();toast('Payment saved ✓');
 }
-function delPay(id){if(!confirm('Delete?'))return;const p=S.payments.find(x=>x.id===id);S.payments=S.payments.filter(p=>p.id!==id);logHistory('Deleted','Payment',p?p.ref+' — '+p.cust:id);persist();renderAll();toast('Deleted');}
+function delPay(id){if(!confirm('Delete?'))return;const p=S.payments.find(x=>x.id===id);S.payments=S.payments.filter(p=>p.id!==id);logHistory('Deleted','Payment',p?(p.ref+' — Customer: '+p.cust+'; Amount: ₹'+V(p.amt).toLocaleString('en-IN')+(p.invNum?'; Invoice: '+p.invNum:'')+(p.mode?'; Mode: '+p.mode:'')+(p.date?'; Date: '+DF(p.date):'')):id);persist();renderAll();toast('Deleted');}
 
 // ── PRODUCTS ──
 function openProdM(id){
@@ -1901,8 +1946,20 @@ function openProdM(id){
   else{['pm-n','pm-h','pm-r'].forEach(i=>document.getElementById(i).value='');document.getElementById('pm-u').value='Mtr';document.getElementById('pm-g').value='18';}
   openM('prod-modal');
 }
-function saveProd(){const name=document.getElementById('pm-n').value.trim();if(!name){toast('Enter name');return;}const p={id:S.eProdId||uid(),name,hsn:document.getElementById('pm-h').value,unit:document.getElementById('pm-u').value,rate:V(document.getElementById('pm-r').value),gst:V(document.getElementById('pm-g').value)};if(S.eProdId){const i=S.products.findIndex(x=>x.id===S.eProdId);S.products[i]=p;}else S.products.push(p);persist();closeM('prod-modal');renderAll();toast('Saved ✓');}
-function delProd(id){if(!confirm('Delete?'))return;const p=S.products.find(x=>x.id===id);S.products=S.products.filter(p=>p.id!==id);logHistory('Deleted','Product',p?p.name:id);persist();renderAll();toast('Deleted');}
+function saveProd(){
+  const name=document.getElementById('pm-n').value.trim();if(!name){toast('Enter name');return;}
+  const p={id:S.eProdId||uid(),name,hsn:document.getElementById('pm-h').value,unit:document.getElementById('pm-u').value,rate:V(document.getElementById('pm-r').value),gst:V(document.getElementById('pm-g').value)};
+  if(S.eProdId){
+    const i=S.products.findIndex(x=>x.id===S.eProdId);const oldP=S.products[i];S.products[i]=p;
+    const prodDiff=fieldDiff(oldP,p,{name:'Name',hsn:'HSN Code',unit:'Unit',rate:'Rate',gst:'GST %'})||'No changes detected';
+    logHistory('Edited','Product',name+' — '+prodDiff);
+  }else{
+    S.products.push(p);
+    logHistory('Created','Product',name+' — HSN: '+(p.hsn||'—')+'; Unit: '+p.unit+'; Rate: ₹'+V(p.rate).toLocaleString('en-IN')+'; GST: '+p.gst+'%');
+  }
+  persist();closeM('prod-modal');renderAll();toast('Saved ✓');
+}
+function delProd(id){if(!confirm('Delete?'))return;const p=S.products.find(x=>x.id===id);S.products=S.products.filter(p=>p.id!==id);logHistory('Deleted','Product',p?(p.name+(p.hsn?'; HSN: '+p.hsn:'')+'; Unit: '+p.unit+'; Rate: ₹'+V(p.rate).toLocaleString('en-IN')+'; GST: '+p.gst+'%'):id);persist();renderAll();toast('Deleted');}
 
 // ── CUSTOMERS ──
 function openCustM(id){
@@ -1977,7 +2034,7 @@ function saveCust(){
   logHistory(isNewCust?'Created':'Edited','Customer',name+' — '+custDiff);
   persist();closeM('cust-modal');renderAll();toast('Saved ✓');
 }
-function delCust(id){if(!confirm('Delete?'))return;const c=S.customers.find(x=>x.id===id);S.customers=S.customers.filter(c=>c.id!==id);logHistory('Deleted','Customer',c?c.name:id);persist();renderAll();toast('Deleted');}
+function delCust(id){if(!confirm('Delete?'))return;const c=S.customers.find(x=>x.id===id);S.customers=S.customers.filter(c=>c.id!==id);logHistory('Deleted','Customer',c?(c.name+(c.custId?'; ID: '+c.custId:'')+(c.phone?'; Phone: '+c.phone:'')+(c.gst?'; GSTIN: '+c.gst:'')+(c.email?'; Email: '+c.email:'')):id);persist();renderAll();toast('Deleted');}
 
 // ── CUSTOMER DETAIL VIEW ──
 function setCustTab(tab,el){
@@ -3332,10 +3389,11 @@ function renderCallDiaryTbl(){
     '<div class="sc" style="background:linear-gradient(135deg,#dc2626,#f87171);color:#fff"><div class="sc-l" style="color:#fee">Overdue Calls</div><div class="sc-v" style="color:#fff">'+overdue+'</div></div>'+
     '<div class="sc" style="background:linear-gradient(135deg,#d97706,#fbbf24);color:#fff"><div class="sc-l" style="color:#fff3">Due Today</div><div class="sc-v" style="color:#fff">'+dueToday+'</div></div>'+
     '<div class="sc"><div class="sc-l">Upcoming (7 days)</div><div class="sc-v">'+upcoming+'</div></div>';
-  tb.innerHTML=recs.length?recs.slice().sort((a,b)=>{
-    const sa=reminderStatus(a),sb=reminderStatus(b);
-    const rank={overdue:0,today:1,upcoming:2,none:3};
-    return rank[sa]-rank[sb]||(a.reminderDate||'').localeCompare(b.reminderDate||'');
+  tb.innerHTML=recs.length?[...recs].sort((a,b)=>{
+    const la=lastCall(a),lb=lastCall(b);
+    const ta=la?new Date(la.date).getTime():0;
+    const tb2=lb?new Date(lb.date).getTime():0;
+    return tb2-ta;
   }).map(r=>{
     const contacts=r.contacts||[];
     const title=r.title||(contacts[0]?contacts[0].name:'—');
@@ -3411,10 +3469,11 @@ function saveCallRecord(){
     reminderDate:document.getElementById('call-reminder').value,
     repeatDays:V(document.getElementById('call-repeat').value),
     notes:document.getElementById('call-notes').value,
-    calls:(oldRec&&oldRec.calls)||[]
+    calls:(oldRec&&oldRec.calls)||[],
+    createdAt:(oldRec&&oldRec.createdAt)||Date.now()
   };
   if(S.eCallId){const idx=S.callDiary.findIndex(x=>x.id===S.eCallId);S.callDiary[idx]=rec;}
-  else{S.callDiary.push(rec);}
+  else{S.callDiary.unshift(rec);}
   const label=rec.title||contacts[0].name;
   logHistory(isNewCall?'Created':'Edited','Call Contact',label);
   persist();renderCallDiaryTbl();closeM('call-modal');toast('✓ Contact saved');
@@ -3699,18 +3758,43 @@ function renderOfferTbl(){
     '<td><button class="btn bg bsm" onclick="prevOffer(\''+o.id+'\')">👁</button> <button class="btn bg bsm" onclick="editOffer(\''+o.id+'\')">✏️</button> '+(isStaff()?'':'<button class="btn bg bsm" onclick="delOffer(\''+o.id+'\')">🗑</button>')+'</td></tr>';
   }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--sl)">No offers yet</td></tr>';
 }
-function chOfferStat(id,val){if(!val)return;const o=S.offers.find(x=>x.id===id);if(o){o.status=val;logHistory('Status Change','Offer',o.offerNo+' → '+val);persist();renderOfferTbl();toast('Updated');}}
+function chOfferStat(id,val){if(!val)return;const o=S.offers.find(x=>x.id===id);if(o){const oldStat=o.status||'submitted';o.status=val;logHistory('Status Change','Offer',o.offerNo+' ('+esc(o.custName)+') — Status: '+oldStat.replace('_',' ')+' → '+val.replace('_',' ')+'; Total: '+F(o.total));persist();renderOfferTbl();toast('Updated');}}
 
 // ── ACTIVITY HISTORY PAGE ──
+function fmtHistDetail(raw){
+  if(!raw||raw==='—')return '<span style="color:var(--sl)">—</span>';
+  // Split detail by "; " but keep first token (ref/ID before " — ") as a header
+  const dashIdx=raw.indexOf(' — ');
+  let header='',body=raw;
+  if(dashIdx>-1){header=raw.slice(0,dashIdx);body=raw.slice(dashIdx+3);}
+  // Split remaining into field: value pairs
+  const parts=body.split(/;\s*/);
+  const lines=parts.filter(Boolean).map(p=>{
+    const ci=p.indexOf(': ');
+    if(ci>-1){
+      const lbl=p.slice(0,ci);
+      const val=p.slice(ci+2);
+      // Highlight arrow (old→new diffs)
+      const fmtVal2=val.replace(/(.+?) → (.+)/,'<span style="color:var(--sl)">$1</span> <span style="font-size:11px">→</span> <span style="color:var(--ink);font-weight:600">$2</span>');
+      return '<span style="color:var(--sl);font-size:11px">'+esc(lbl)+':</span> '+fmtVal2;
+    }
+    return esc(p);
+  });
+  let html='';
+  if(header)html+='<span style="font-weight:700;color:var(--rust);font-size:12px">'+esc(header)+'</span><br>';
+  html+=lines.join('<br>');
+  return html;
+}
 function renderHistory(){
   pruneHistory();
   const tb=document.getElementById('history-tb');if(!tb)return;
   const rows=(S.history||[]).slice().reverse();
   tb.innerHTML=rows.length?rows.map(h=>{
     const d=new Date(h.ts);
-    const when=d.toLocaleDateString('en-IN')+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-    const actColor=h.action==='Deleted'?'var(--rd)':(h.action==='Created'?'var(--gn)':'var(--am)');
-    return '<tr><td style="font-size:12px;white-space:nowrap">'+when+'</td><td style="font-weight:600;color:'+actColor+'">'+esc(h.action)+'</td><td>'+esc(h.entity)+'</td><td style="font-size:12px">'+esc(h.detail||'—')+'</td><td style="font-size:11px;text-transform:capitalize">'+esc(h.role||'admin')+'</td></tr>';
+    const when=d.toLocaleDateString('en-IN')+'<br><span style="font-size:11px;color:var(--sl)">'+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+'</span>';
+    const actColor=h.action==='Deleted'?'var(--rd)':(h.action==='Created'?'var(--gn)':(h.action==='Status Change'?'var(--rust)':'var(--am)'));
+    const actIcon=h.action==='Deleted'?'🗑 ':(h.action==='Created'?'✚ ':(h.action==='Status Change'?'🔄 ':(h.action==='Edited'?'✏️ ':'')));
+    return '<tr><td style="font-size:12px;white-space:nowrap;vertical-align:top">'+when+'</td><td style="font-weight:600;color:'+actColor+';vertical-align:top;white-space:nowrap">'+actIcon+esc(h.action)+'</td><td style="vertical-align:top;white-space:nowrap"><span style="font-weight:500">'+esc(h.entity)+'</span></td><td style="font-size:12px;line-height:1.7;vertical-align:top">'+fmtHistDetail(h.detail||'')+'</td><td style="font-size:11px;text-transform:capitalize;vertical-align:top;white-space:nowrap"><span style="background:'+(h.role==='admin'?'rgba(184,92,42,.15)':'rgba(100,100,200,.15)')+';color:'+(h.role==='admin'?'var(--rust)':'#6366f1')+';padding:2px 7px;border-radius:20px">'+esc(h.role||'admin')+'</span></td></tr>';
   }).join(''):'<tr><td colspan="5"><div class="empty"><div class="ei">🕘</div><p>No activity recorded in the last 7 days.</p></div></td></tr>';
 }
 function downloadHistory(){
