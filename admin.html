@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -167,6 +168,7 @@ tr:hover td{background:rgba(244,243,240,.8)}
 .badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10.5px;font-weight:600}
 .bpaid{background:#DCFCE7;color:#166534}.bunpaid{background:#FEF9C3;color:#854D0E}.bdraft{background:#F3F4F6;color:#374151}.bpartial{background:#DBEAFE;color:#1E40AF}
 .bsubmitted{background:#FEF9C3;color:#854D0E}.border_final{background:#DCFCE7;color:#166534}.blost{background:#FEE2E2;color:#991B1B}
+.bconfirmed{background:#DCFCE7;color:#166534}.bin_progress{background:#DBEAFE;color:#1E40AF}.bdispatched{background:#F3E8FF;color:#6B21A8}.bcompleted{background:#D1FAE5;color:#065F46}.bcancelled{background:#FEE2E2;color:#991B1B}
 .tabs{display:flex;gap:2px;background:var(--bg);border-radius:6px;padding:3px;width:fit-content;margin-bottom:14px;border:1px solid var(--bd);flex-wrap:wrap}
 .tab{padding:5px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:500;color:var(--sl);transition:all .15s}
 .tab.active{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
@@ -321,6 +323,7 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <div class="ni" onclick="go('reports')"><span class="ic">📈</span>Reports</div>
     <div class="ni" onclick="go('po')"><span class="ic">📑</span>Purchase Orders</div>
     <div class="ni" onclick="go('offers')"><span class="ic">📨</span>Offers</div>
+    <div class="ni" onclick="go('confirmed')"><span class="ic">✅</span>Confirmed Orders</div>
     <div class="ni" onclick="go('calldiary')"><span class="ic">📞</span>Call Diary</div>
     <div class="ni" onclick="go('staff')"><span class="ic">🧑‍💼</span>Staff</div>
     <div class="ni" onclick="go('history')"><span class="ic">🕘</span>History</div>
@@ -600,6 +603,12 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
   </div>
 </div>
 
+<div id="page-confirmed" class="page">
+  <div class="card"><div class="ch"><h3>✅ Confirmed Orders</h3><button class="btn bp bsm" onclick="openNewConfirmed()">＋ New Confirmed Order</button></div>
+    <div class="tw"><table><thead><tr><th>CO No.</th><th>Date</th><th>Customer</th><th>Project</th><th>Offer Ref</th><th>Total (₹)</th><th>Status</th><th>Invoice #</th><th>Actions</th></tr></thead><tbody id="confirmed-tb"></tbody></table></div>
+  </div>
+</div>
+
 <div id="page-history" class="page">
   <div class="card"><div class="ch">
       <h3>🕘 Activity History</h3>
@@ -677,6 +686,7 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <div class="card" style="grid-column:1/-1"><div class="ch"><h3>📨 Offer Defaults</h3></div><div class="cb">
       <div class="fgrid">
         <div class="fg"><label>Offer Ref. Prefix</label><input id="s-offerprefix" type="text" placeholder="e.g. YSC-OFR"></div>
+        <div class="fg"><label>Confirmed Order Prefix</label><input id="s-coprefix" type="text" placeholder="e.g. CO"></div>
         <div class="fg"><label>Authorised Signatory (Offer)</label><input id="s-offersign" type="text" placeholder="e.g. Authorised Signatory"></div>
         <div class="fg"><label>Default Document Font Size</label><select id="s-offerfontsize"><option value="9.5">Normal (9.5px)</option><option value="11">Large (11px)</option><option value="12.5">Extra Large (12.5px)</option><option value="14">Huge (14px)</option></select></div>
         <div class="fg"><label>Default Price &amp; Taxes Note</label><input id="s-offerpricenote" type="text" placeholder="e.g. Prices inclusive of GST@18%, Transportation & Insurance."></div>
@@ -902,6 +912,68 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <button class="btn bwa" onclick="doWAPO()">💬 WhatsApp</button>
     <button class="btn bml" id="po-email-btn" style="display:none" onclick="doEmailPO()">✉️ Email</button>
     <button class="btn bgrn" onclick="dlPOPDF()">⬇ Download PDF</button>
+  </div>
+</div></div>
+
+<div id="confirmed-modal" class="mo" style="display:none"><div class="md" style="max-width:800px">
+  <div class="mh"><h3 id="confirmed-mt">New Confirmed Order</h3><button class="mc" onclick="closeM('confirmed-modal')">×</button></div>
+  <div class="mb">
+    <div class="sl">Confirmed Order Details</div>
+    <div class="cb">
+      <div class="fg"><label>CO Number</label><input type="text" id="co-num" readonly style="background:#f3f4f6"></div>
+      <div class="fg"><label>Date</label><input type="date" id="co-date"></div>
+      <div class="fg"><label>Customer Name</label><input type="text" id="co-custname" list="co-custdl" oninput="autoCoCust(this.value)" placeholder="Customer / Company Name"><datalist id="co-custdl"></datalist></div>
+      <div class="fg"><label>Customer Phone</label><input type="text" id="co-custphone"></div>
+      <div class="fg"><label>Customer Email</label><input type="email" id="co-custemail"></div>
+      <div class="fg full"><label>Customer Address</label><input type="text" id="co-custaddr"></div>
+      <div class="fg"><label>Project</label><input type="text" id="co-project"></div>
+      <div class="fg"><label>Offer Ref (if any)</label><input type="text" id="co-offerref" readonly style="background:#f3f4f6"></div>
+      <div class="fg"><label>PO / Order Reference</label><input type="text" id="co-poref" placeholder="Customer PO No."></div>
+      <div class="fg"><label>Status</label>
+        <select id="co-status">
+          <option value="confirmed">Confirmed</option>
+          <option value="in_progress">In Progress</option>
+          <option value="dispatched">Dispatched</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+    <div class="sl" style="margin-top:12px">Items</div>
+    <div style="overflow-x:auto">
+      <table class="itbl"><thead><tr>
+        <th style="min-width:180px">Description</th>
+        <th>HSN</th>
+        <th style="min-width:60px">Qty</th>
+        <th>Unit</th>
+        <th style="min-width:90px">Rate (₹)</th>
+        <th>GST%</th>
+        <th style="min-width:100px">Total (₹)</th>
+        <th>✕</th>
+      </tr></thead><tbody id="co-itbody"></tbody></table>
+    </div>
+    <button class="btn bg bsm" style="margin-top:6px" onclick="addCORow()">＋ Add Row</button>
+    <div class="cb" style="margin-top:12px">
+      <div class="fg"><label>Price Type</label>
+        <select id="co-pricetype" onchange="calcCOTots()">
+          <option value="incl">Incl. GST</option>
+          <option value="excl">Excl. GST</option>
+        </select>
+      </div>
+      <div class="fg"><label>GST %</label><input type="number" id="co-gstpct" value="18" min="0" max="28" oninput="calcCOTots()"></div>
+    </div>
+    <div style="text-align:right;margin-top:10px;line-height:1.8;font-size:13px">
+      <span id="co-tot-taxable"></span><br>
+      <span id="co-tot-gst"></span><br>
+      <b id="co-tot-grand"></b>
+    </div>
+    <div class="cb" style="margin-top:10px">
+      <div class="fg full"><label>Notes / Terms</label><textarea id="co-notes" rows="2"></textarea></div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn bo" onclick="closeM('confirmed-modal')">Cancel</button>
+    <button class="btn bp" onclick="saveConfirmed()">💾 Save Confirmed Order</button>
   </div>
 </div></div>
 
@@ -1266,11 +1338,11 @@ window.applyRoleUI=function(role){
   if(typeof renderAll==='function')renderAll();
 };
 let S={
-  invoices:[],products:[],customers:[],advances:[],payments:[],purchaseOrders:[],suppliers:[],offers:[],history:[],employees:[],callDiary:[],
-  nextN:1,nextAdv:1,nextPay:1,nextCust:1,nextPO:1,nextOffer:1,
-  eInvId:null,eProdId:null,eCustId:null,eAdvId:null,ePayId:null,ePOId:null,eOfferId:null,eEmpId:null,eCallId:null,
+  invoices:[],products:[],customers:[],advances:[],payments:[],purchaseOrders:[],suppliers:[],offers:[],confirmedOrders:[],history:[],employees:[],callDiary:[],
+  nextN:1,nextAdv:1,nextPay:1,nextCust:1,nextPO:1,nextOffer:1,nextCO:1,
+  eInvId:null,eProdId:null,eCustId:null,eAdvId:null,ePayId:null,ePOId:null,eOfferId:null,eCOId:null,eEmpId:null,eCallId:null,
   curPrev:null,curPOPrev:null,curOfferPrev:null,fStat:'all',fTxt:'',rP:'monthly',
-  cfg:{name:'Yantriki Suppliers and Consultancy',gst:'23AADFY9269N1ZD',pan:'AADFY9269N',phone:'8815184776',email:'info@yantrikisc.in',a1:'Plot No. 347, Mandakini Kolar Road',a2:'Bhopal (MP) 462042',juris:'Bhopal',bank:'',aname:'',acno:'',ifsc:'',branch:'',actype:'Current',upi:'',prefix:'YSC',gsttype:'intrastate',sign:'Authorised Signatory',terms:30,footer:'Delivery:- Freight Charges FREE ON ROAD',poprefix:'YSC-PO',potaxtype:'igst',potaxpct:18,posign:'Authorised Signatory',podel:'',popt:'',pobill:'',ponotes:'',offerprefix:'YSC-OFR',offersign:'Authorised Signatory',offerfontsize:'11',offerpricenote:'The below quoted prices are inclusive of GST@18%, Transportation to site and Insurance.',offernotes:'Looking forward for your valuable order.',stampInv:false,stampPO:false,stampOffer:true}
+  cfg:{name:'Yantriki Suppliers and Consultancy',gst:'23AADFY9269N1ZD',pan:'AADFY9269N',phone:'8815184776',email:'info@yantrikisc.in',a1:'Plot No. 347, Mandakini Kolar Road',a2:'Bhopal (MP) 462042',juris:'Bhopal',bank:'',aname:'',acno:'',ifsc:'',branch:'',actype:'Current',upi:'',prefix:'YSC',gsttype:'intrastate',sign:'Authorised Signatory',terms:30,footer:'Delivery:- Freight Charges FREE ON ROAD',poprefix:'YSC-PO',potaxtype:'igst',potaxpct:18,posign:'Authorised Signatory',podel:'',popt:'',pobill:'',ponotes:'',offerprefix:'YSC-OFR',offersign:'Authorised Signatory',offerfontsize:'11',offerpricenote:'The below quoted prices are inclusive of GST@18%, Transportation to site and Insurance.',offernotes:'Looking forward for your valuable order.',stampInv:false,stampPO:false,stampOffer:true,coprefix:'CO'}
 };
 
 // ── ACTIVITY HISTORY (auto-purges after 7 days) ──
@@ -1315,8 +1387,8 @@ function fieldDiff(oldObj,newObj,fieldMap){
 }
 
 // ── STORAGE ──
-function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,history:S.history,employees:S.employees,callDiary:S.callDiary,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,cfg:S.cfg});}
-function applyData(raw){try{const p=JSON.parse(raw);S.invoices=p.invoices||[];S.products=p.products||[];S.customers=p.customers||[];S.advances=p.advances||[];S.payments=p.payments||[];S.purchaseOrders=p.purchaseOrders||[];S.suppliers=p.suppliers||[];S.offers=p.offers||[];S.history=p.history||[];S.employees=p.employees||[];S.callDiary=p.callDiary||[];pruneHistory();S.nextN=p.nextN||1;S.nextAdv=p.nextAdv||1;S.nextPay=p.nextPay||1;S.nextCust=p.nextCust||1;S.nextPO=p.nextPO||1;S.nextOffer=p.nextOffer||1;S.cfg=Object.assign({},S.cfg,p.cfg||{});backfillCustIds();return true;}catch(e){return false;}}
+function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,confirmedOrders:S.confirmedOrders,history:S.history,employees:S.employees,callDiary:S.callDiary,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,nextCO:S.nextCO,cfg:S.cfg});}
+function applyData(raw){try{const p=JSON.parse(raw);S.invoices=p.invoices||[];S.products=p.products||[];S.customers=p.customers||[];S.advances=p.advances||[];S.payments=p.payments||[];S.purchaseOrders=p.purchaseOrders||[];S.suppliers=p.suppliers||[];S.offers=p.offers||[];S.confirmedOrders=p.confirmedOrders||[];S.history=p.history||[];S.employees=p.employees||[];S.callDiary=p.callDiary||[];pruneHistory();S.nextN=p.nextN||1;S.nextAdv=p.nextAdv||1;S.nextPay=p.nextPay||1;S.nextCust=p.nextCust||1;S.nextPO=p.nextPO||1;S.nextOffer=p.nextOffer||1;S.nextCO=p.nextCO||1;S.cfg=Object.assign({},S.cfg,p.cfg||{});backfillCustIds();return true;}catch(e){return false;}}
 async function persist(){
   const d=payload();
   try{localStorage.setItem(STORE_KEY,d);}catch(e){}
@@ -1355,8 +1427,8 @@ function doReset(){
   // Reset all data, keep settings/cfg intact
   setTimeout(()=>{
     S.invoices=[];S.products=[];S.customers=[];S.advances=[];S.payments=[];
-    S.purchaseOrders=[];S.suppliers=[];S.offers=[];S.history=[];S.employees=[];S.callDiary=[];
-    S.nextN=1;S.nextAdv=1;S.nextPay=1;S.nextCust=1;S.nextPO=1;S.nextOffer=1;
+    S.purchaseOrders=[];S.suppliers=[];S.offers=[];S.confirmedOrders=[];S.history=[];S.employees=[];S.callDiary=[];
+    S.nextN=1;S.nextAdv=1;S.nextPay=1;S.nextCust=1;S.nextPO=1;S.nextOffer=1;S.nextCO=1;
     S.eInvId=null;S.eProdId=null;S.eCustId=null;S.eAdvId=null;S.ePayId=null;S.ePOId=null;S.eSupId=null;S.eOfferId=null;
     S.curPrev=null;S.curPOPrev=null;S.curOfferPrev=null;S.fStat='all';S.fTxt='';
     window._booted=false;
@@ -1412,13 +1484,14 @@ function custByAny(val){
 }
 
 // ── NAVIGATION ──
-const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','offers','staff','calldiary','history','settings'];
-const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',offers:'Offers',staff:'Staff',calldiary:'Call Diary',history:'Activity History',settings:'Settings'};
+const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','offers','confirmed','staff','calldiary','history','settings'];
+const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',offers:'Offers',confirmed:'Confirmed Orders',staff:'Staff',calldiary:'Call Diary',history:'Activity History',settings:'Settings'};
 const TOP_BTN_MAP={
   dashboard:null, invoices:['＋ New Invoice','openNewInv'],
   advances:['＋ Record Advance','openAdvM'], payments:['＋ Record Payment','openPayM'],
   products:['＋ Add Product','openProdM'], customers:['＋ Add Customer','openCustM'],
   po:['＋ New Purchase Order','openNewPO'], offers:['＋ New Offer','openNewOffer'],
+  confirmed:['＋ New Confirmed Order','openNewConfirmed'],
   reports:null, settings:null
 };
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open');}
@@ -1459,6 +1532,7 @@ document.getElementById('top-btn').addEventListener('click',function(){
   else if(a==='openCustM')openCustM();
   else if(a==='openNewPO')openNewPO();
   else if(a==='openNewOffer')openNewOffer();
+  else if(a==='openNewConfirmed')openNewConfirmed();
   else openNewInv();
 });
 
@@ -1525,7 +1599,7 @@ function fillTpl(tpl,inv){
     .replace(/{pan}/g,C.pan||'');
 }
 
-const SK=['name','gst','pan','phone','email','a1','a2','juris','bank','aname','acno','ifsc','branch','upi','prefix','sign','footer','poprefix','posign','podel','popt','pobill','ponotes','offerprefix','offersign','offerpricenote','offernotes'];
+const SK=['name','gst','pan','phone','email','a1','a2','juris','bank','aname','acno','ifsc','branch','upi','prefix','sign','footer','poprefix','posign','podel','popt','pobill','ponotes','offerprefix','offersign','offerpricenote','offernotes','coprefix'];
 function loadSett(){
   SK.forEach(k=>{const el=document.getElementById('s-'+k);if(el)el.value=S.cfg[k]||'';});
   const g=document.getElementById('s-gsttype');if(g)g.value=S.cfg.gsttype||'intrastate';
@@ -1834,6 +1908,13 @@ function saveInv(type){
     (inv.notes?'; Notes: '+inv.notes:'')
   ):(fieldDiff(oldInv,inv,{bname:'Customer',date:'Date',status:'Status',taxT:'Taxable Amount',grand:'Grand Total',notes:'Notes',po:'PO Ref',useStamp:'Stamp',priceIncGst:'Price Incl. GST'})||'No field changes detected');
   logHistory(isNew?'Created':'Edited','Invoice',num+' — '+invDiff);
+  // Link invoice back to confirmed order if created from one
+  const coId=document.getElementById('inv-modal').dataset.fromCO;
+  if(coId&&isNew){
+    const co=S.confirmedOrders.find(x=>x.id===coId);
+    if(co){co.invoiceNum=num;logHistory('Linked','Confirmed Order',co.coNum+' → Invoice '+num);}
+    document.getElementById('inv-modal').dataset.fromCO='';
+  }
   persist();closeM('inv-modal');renderAll();toast('Invoice saved ✓');
 }
 function upsertCust(d){
@@ -2543,7 +2624,7 @@ function renderReports(){
 }
 
 // ── RENDER ALL ──
-function renderAll(){renderDash();renderInvTbl();renderAdvTbl();renderPayTbl();renderProds();renderCusts();renderSupTbl();renderPOTbl();renderOfferTbl();}
+function renderAll(){renderDash();renderInvTbl();renderAdvTbl();renderPayTbl();renderProds();renderCusts();renderSupTbl();renderPOTbl();renderOfferTbl();renderConfirmedTbl();}
 
 // ── SUPPLIERS PAGE ──
 function renderSupTbl(){
@@ -3758,7 +3839,241 @@ function renderOfferTbl(){
     '<td><button class="btn bg bsm" onclick="prevOffer(\''+o.id+'\')">👁</button> <button class="btn bg bsm" onclick="editOffer(\''+o.id+'\')">✏️</button> '+(isStaff()?'':'<button class="btn bg bsm" onclick="delOffer(\''+o.id+'\')">🗑</button>')+'</td></tr>';
   }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--sl)">No offers yet</td></tr>';
 }
-function chOfferStat(id,val){if(!val)return;const o=S.offers.find(x=>x.id===id);if(o){const oldStat=o.status||'submitted';o.status=val;logHistory('Status Change','Offer',o.offerNo+' ('+esc(o.custName)+') — Status: '+oldStat.replace('_',' ')+' → '+val.replace('_',' ')+'; Total: '+F(o.total));persist();renderOfferTbl();toast('Updated');}}
+function chOfferStat(id,val){if(!val)return;const o=S.offers.find(x=>x.id===id);if(o){const oldStat=o.status||'submitted';o.status=val;logHistory('Status Change','Offer',o.offerNo+' ('+esc(o.custName)+') — Status: '+oldStat.replace('_',' ')+' → '+val.replace('_',' ')+'; Total: '+F(o.total));
+  // Auto-create confirmed order if status changed to order_final and not already present
+  if(val==='order_final'){
+    const already=S.confirmedOrders.find(co=>co.offerRef===o.offerNo&&co.offerId===o.id);
+    if(!already){
+      const co={
+        id:uid(),coNum:(S.cfg.coprefix||'CO')+'-'+String(S.nextCO).padStart(3,'0'),
+        date:new Date().toISOString().slice(0,10),
+        custName:o.custName,custAddr:o.custAddr||'',custPhone:o.custPhone||'',custEmail:o.custEmail||'',
+        project:o.project||'',offerRef:o.offerNo,offerId:o.id,poRef:'',
+        items:(o.items||[]).map(it=>({...it})),
+        priceType:o.priceType||'incl',gstPct:o.gstPct||18,
+        subTotal:o.subTotal||0,taxable:o.taxable||0,gstAmt:o.gstAmt||0,total:o.total||0,
+        notes:'',status:'confirmed',invoiceNum:''
+      };
+      S.confirmedOrders.unshift(co);S.nextCO++;
+      logHistory('Created','Confirmed Order',co.coNum+' — From Offer: '+o.offerNo+'; Customer: '+o.custName+'; Total: '+F(co.total));
+      toast('✅ Confirmed Order '+co.coNum+' created from offer');
+    }
+  }
+  persist();renderOfferTbl();renderConfirmedTbl();}}
+
+// ── CONFIRMED ORDERS ──
+function openNewConfirmed(){
+  S.eCOId=null;
+  document.getElementById('confirmed-mt').textContent='New Confirmed Order';
+  const C=S.cfg;
+  document.getElementById('co-num').value=(C.coprefix||'CO')+'-'+String(S.nextCO).padStart(3,'0');
+  document.getElementById('co-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('co-custname').value='';
+  document.getElementById('co-custphone').value='';
+  document.getElementById('co-custemail').value='';
+  document.getElementById('co-custaddr').value='';
+  document.getElementById('co-project').value='';
+  document.getElementById('co-offerref').value='';
+  document.getElementById('co-poref').value='';
+  document.getElementById('co-notes').value='';
+  document.getElementById('co-status').value='confirmed';
+  document.getElementById('co-pricetype').value='incl';
+  document.getElementById('co-gstpct').value=18;
+  document.getElementById('co-itbody').innerHTML='';
+  addCORow();
+  // populate customer datalist
+  const dl=document.getElementById('co-custdl');
+  dl.innerHTML=S.customers.map(c=>'<option value="'+esc(c.name)+'">').join('');
+  calcCOTots();
+  openM('confirmed-modal');
+}
+function editConfirmed(id){
+  const co=S.confirmedOrders.find(x=>x.id===id);if(!co)return;
+  S.eCOId=id;
+  document.getElementById('confirmed-mt').textContent='Edit Confirmed Order';
+  document.getElementById('co-num').value=co.coNum;
+  document.getElementById('co-date').value=co.date||'';
+  document.getElementById('co-custname').value=co.custName||'';
+  document.getElementById('co-custphone').value=co.custPhone||'';
+  document.getElementById('co-custemail').value=co.custEmail||'';
+  document.getElementById('co-custaddr').value=co.custAddr||'';
+  document.getElementById('co-project').value=co.project||'';
+  document.getElementById('co-offerref').value=co.offerRef||'';
+  document.getElementById('co-poref').value=co.poRef||'';
+  document.getElementById('co-notes').value=co.notes||'';
+  document.getElementById('co-status').value=co.status||'confirmed';
+  document.getElementById('co-pricetype').value=co.priceType||'incl';
+  document.getElementById('co-gstpct').value=co.gstPct||18;
+  document.getElementById('co-itbody').innerHTML='';
+  (co.items||[]).forEach(it=>addCORow(it));
+  if(!(co.items||[]).length)addCORow();
+  const dl=document.getElementById('co-custdl');
+  dl.innerHTML=S.customers.map(c=>'<option value="'+esc(c.name)+'">').join('');
+  calcCOTots();
+  openM('confirmed-modal');
+}
+function autoCoCust(v){
+  const c=S.customers.find(x=>x.name===v);
+  if(c){
+    if(c.phone)document.getElementById('co-custphone').value=c.phone;
+    if(c.email)document.getElementById('co-custemail').value=c.email;
+    if(c.addr)document.getElementById('co-custaddr').value=c.addr;
+  }
+}
+function addCORow(it){
+  const tr=document.createElement('tr');
+  const desc=it?esc(it.desc||it.description||''):'';
+  const hsn=it?esc(it.hsn||''):'';
+  const qty=it?V(it.qty):1;
+  const unit=it?esc(it.unit||''):'';
+  const rate=it?V(it.rate):0;
+  const gst=it?V(it.gst):18;
+  tr.innerHTML=`
+    <td><input type="text" class="co-d" value="${desc}" style="width:100%" oninput="calcCOTots()"></td>
+    <td><input type="text" class="co-h" value="${hsn}" style="width:60px"></td>
+    <td><input type="number" class="co-q" value="${qty}" style="width:55px" min="0" oninput="calcCOTots()"></td>
+    <td><input type="text" class="co-u" value="${unit}" style="width:50px"></td>
+    <td><input type="number" class="co-r" value="${rate}" style="width:80px" min="0" step="0.01" oninput="calcCOTots()"></td>
+    <td><input type="number" class="co-g" value="${gst}" style="width:50px" min="0" max="28" oninput="calcCOTots()"></td>
+    <td class="co-tot" style="font-weight:600;text-align:right;padding-right:6px">—</td>
+    <td><button class="btn bg bsm" onclick="this.closest('tr').remove();calcCOTots()">✕</button></td>
+  `;
+  document.getElementById('co-itbody').appendChild(tr);
+  calcCOTots();
+}
+function calcCOTots(){
+  const incl=document.getElementById('co-pricetype').value==='incl';
+  const defaultGst=V(document.getElementById('co-gstpct').value)||18;
+  let subT=0,taxT=0,gstT=0;
+  document.querySelectorAll('#co-itbody tr').forEach(tr=>{
+    const qty=V(tr.querySelector('.co-q').value);
+    const rate=V(tr.querySelector('.co-r').value);
+    const gP=V(tr.querySelector('.co-g').value)||defaultGst;
+    const lineVal=qty*rate;
+    let taxable,gstAmt,total;
+    if(incl){taxable=lineVal/(1+gP/100);gstAmt=lineVal-taxable;total=lineVal;}
+    else{taxable=lineVal;gstAmt=lineVal*gP/100;total=lineVal+gstAmt;}
+    subT+=lineVal;taxT+=taxable;gstT+=gstAmt;
+    const totEl=tr.querySelector('.co-tot');
+    if(totEl)totEl.textContent='₹'+total.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  });
+  const grand=taxT+gstT;
+  document.getElementById('co-tot-taxable').textContent='Taxable: ₹'+taxT.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('co-tot-gst').textContent='GST: ₹'+gstT.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('co-tot-grand').textContent='Grand Total: ₹'+grand.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return{subTotal:subT,taxable:taxT,gstAmt:gstT,total:grand};
+}
+function getCOItems(){
+  const items=[];
+  document.querySelectorAll('#co-itbody tr').forEach(tr=>{
+    const qty=V(tr.querySelector('.co-q').value);
+    const rate=V(tr.querySelector('.co-r').value);
+    const gP=V(tr.querySelector('.co-g').value);
+    if(!qty&&!rate)return;
+    items.push({desc:tr.querySelector('.co-d').value,hsn:tr.querySelector('.co-h').value,qty,unit:tr.querySelector('.co-u').value,rate,gst:gP});
+  });
+  return items;
+}
+function saveConfirmed(){
+  const custName=document.getElementById('co-custname').value.trim();
+  if(!custName){toast('⚠ Enter customer name');return;}
+  const items=getCOItems();
+  if(!items.length){toast('⚠ Add at least one item');return;}
+  const t=calcCOTots();
+  const existing=S.eCOId?S.confirmedOrders.find(x=>x.id===S.eCOId):null;
+  const co={
+    id:S.eCOId||uid(),
+    coNum:document.getElementById('co-num').value,
+    date:document.getElementById('co-date').value,
+    custName,
+    custPhone:document.getElementById('co-custphone').value.trim(),
+    custEmail:document.getElementById('co-custemail').value.trim(),
+    custAddr:document.getElementById('co-custaddr').value.trim(),
+    project:document.getElementById('co-project').value.trim(),
+    offerRef:document.getElementById('co-offerref').value.trim(),
+    offerId:existing?existing.offerId:'',
+    poRef:document.getElementById('co-poref').value.trim(),
+    notes:document.getElementById('co-notes').value.trim(),
+    status:document.getElementById('co-status').value,
+    priceType:document.getElementById('co-pricetype').value,
+    gstPct:V(document.getElementById('co-gstpct').value)||18,
+    items,...t,
+    invoiceNum:existing?existing.invoiceNum:''
+  };
+  const isNew=!S.eCOId;
+  if(S.eCOId){const idx=S.confirmedOrders.findIndex(x=>x.id===S.eCOId);S.confirmedOrders[idx]=co;}
+  else{S.confirmedOrders.unshift(co);S.nextCO++;}
+  logHistory(isNew?'Created':'Edited','Confirmed Order',co.coNum+' — Customer: '+custName+'; Total: '+F(co.total)+'; Status: '+co.status);
+  persist();renderConfirmedTbl();closeM('confirmed-modal');toast('✓ Confirmed Order saved');
+}
+function delConfirmed(id){
+  if(blockIfStaff('⚠ Deleting confirmed orders is restricted for your account'))return;
+  if(!confirm('Delete this confirmed order?'))return;
+  const co=S.confirmedOrders.find(x=>x.id===id);
+  S.confirmedOrders=S.confirmedOrders.filter(x=>x.id!==id);
+  logHistory('Deleted','Confirmed Order',co?co.coNum+' — '+co.custName:id);
+  persist();renderConfirmedTbl();toast('Deleted');
+}
+function renderConfirmedTbl(){
+  const tb=document.getElementById('confirmed-tb');if(!tb)return;
+  tb.innerHTML=(S.confirmedOrders||[]).map(co=>{
+    const st=co.status||'confirmed';
+    const stLabel=st.replace(/_/g,' ');
+    const invLink=co.invoiceNum?'<span style="color:var(--rust);font-weight:600">'+esc(co.invoiceNum)+'</span>':'<button class="btn bg bsm" onclick="createInvFromCO(\''+co.id+'\')">🧾 Create Invoice</button>';
+    return '<tr>'+
+      '<td style="font-weight:700;color:var(--rust)">'+esc(co.coNum)+'</td>'+
+      '<td>'+DF(co.date)+'</td>'+
+      '<td>'+esc(co.custName)+'</td>'+
+      '<td>'+esc(co.project||'')+'</td>'+
+      '<td>'+esc(co.offerRef||'')+'</td>'+
+      '<td style="font-weight:700">'+FN(co.total)+'</td>'+
+      '<td><span class="badge b'+st+'">'+stLabel+'</span> <select onchange="chCOStat(\''+co.id+'\',this.value)" style="font-size:11px;border:none;background:transparent;cursor:pointer;color:var(--sl);margin-left:2px"><option value="">▾</option><option value="confirmed">Confirmed</option><option value="in_progress">In Progress</option><option value="dispatched">Dispatched</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></td>'+
+      '<td>'+invLink+'</td>'+
+      '<td><button class="btn bg bsm" onclick="editConfirmed(\''+co.id+'\')">✏️</button> '+(isStaff()?'':'<button class="btn bg bsm" onclick="delConfirmed(\''+co.id+'\')">🗑</button>')+'</td>'+
+    '</tr>';
+  }).join('')||'<tr><td colspan="9" style="text-align:center;color:var(--sl)">No confirmed orders yet</td></tr>';
+}
+function chCOStat(id,val){if(!val)return;const co=S.confirmedOrders.find(x=>x.id===id);if(co){const old=co.status;co.status=val;logHistory('Status Change','Confirmed Order',co.coNum+' ('+co.custName+') — '+old+' → '+val);persist();renderConfirmedTbl();toast('Updated');}}
+function createInvFromCO(id){
+  const co=S.confirmedOrders.find(x=>x.id===id);if(!co)return;
+  if(co.invoiceNum&&!confirm('An invoice ('+co.invoiceNum+') already exists for this order. Create another?'))return;
+  // Open invoice modal pre-filled from CO
+  openNewInv();
+  // Fill fields
+  const C=S.cfg;
+  const num=(C.prefix||'YSC')+'-'+String(S.nextN).padStart(4,'0');
+  document.getElementById('f-num').value=num;
+  document.getElementById('f-date').value=co.date||new Date().toISOString().slice(0,10);
+  document.getElementById('f-bname').value=co.custName||'';
+  document.getElementById('f-baddr').value=co.custAddr||'';
+  document.getElementById('f-bph').value=co.custPhone||'';
+  document.getElementById('f-bem').value=co.custEmail||'';
+  document.getElementById('f-proj').value=co.project||'';
+  document.getElementById('f-po').value=co.poRef||co.offerRef||'';
+  // Fill customer GST from customers list
+  const cust=S.customers.find(x=>x.name===co.custName);
+  if(cust){document.getElementById('f-bgst').value=cust.gst||'';document.getElementById('f-bcustid').value=cust.custId||'';}
+  // Set price type if supported
+  const ptEl=document.getElementById('f-pricetype');if(ptEl)ptEl.value=co.priceType||'excl';
+  // Clear and repopulate items
+  document.getElementById('itbody').innerHTML='';
+  (co.items||[]).forEach(it=>{
+    // addItemRow is the existing function from the app
+    const gstP=it.gst||co.gstPct||18;
+    addRow({desc:it.desc||it.description||'',hsn:it.hsn||'',qty:it.qty||1,unit:it.unit||'',rate:it.rate||0,disc:0,dtype:'%',gst:gstP});
+  });
+  recalc();
+  // Link invoice back to CO by tagging it with co.id in notes field
+  const notesEl=document.getElementById('f-notes');
+  if(notesEl&&!notesEl.value)notesEl.value=(co.notes?co.notes+'\n':'')+'Ref: CO '+co.coNum;
+  // Store coId so we can update the CO after invoice is saved
+  document.getElementById('inv-modal').dataset.fromCO=co.id;
+  toast('Invoice pre-filled from '+co.coNum+' — review and save');
+}
+
+// Patch saveInv to link invoice number back to CO
+const _origSaveInv=saveInv;
+// We'll patch by observing after save via a hook added to saveInv below
 
 // ── ACTIVITY HISTORY PAGE ──
 function fmtHistDetail(raw){
