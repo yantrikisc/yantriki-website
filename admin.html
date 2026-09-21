@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1002,8 +1003,9 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     </div>
     <button class="btn bo bsm" onclick="addOfferRow()">＋ Add Row</button>
     <div class="fgrid" style="margin-top:10px;margin-bottom:4px">
-      <div class="fg"><label>Rate Entered</label><select id="offer-pricetype" onchange="calcOfferTots()"><option value="incl">Already Includes GST (back-calculate)</option><option value="excl">Excludes GST (add tax)</option></select></div>
+      <div class="fg"><label>Rate Entered</label><select id="offer-pricetype" onchange="calcOfferTots();autoOfferPriceNote()"><option value="incl">Already Includes GST (back-calculate)</option><option value="excl">Excludes GST (add tax)</option></select></div>
       <div class="fg"><label>GST %</label><input type="number" id="offer-gstpct" value="18" min="0" oninput="calcOfferTots()"></div>
+      <div class="fg"><label>GST Type</label><select id="offer-gsttype"><option value="intrastate">Intrastate (CGST + SGST)</option><option value="interstate">Interstate (IGST)</option></select></div>
     </div>
     <div class="tots" id="offer-tots"></div>
     <div class="sl" style="margin-top:14px">Terms &amp; Conditions</div>
@@ -3713,6 +3715,21 @@ function getOfferItems(){
     return{size:g('size'),cls:g('class'),qty,rate,amt};
   }).filter(it=>it.size||it.qty||it.rate);
 }
+function autoOfferPriceNote(){
+  const pt=document.getElementById('offer-pricetype').value;
+  const gp=V(document.getElementById('offer-gstpct').value)||18;
+  const el=document.getElementById('offer-pricenote');
+  if(!el)return;
+  const cur=el.value.toLowerCase();
+  // Only overwrite if it matches one of the known auto-patterns (not user-customised text)
+  const isAutoExcl=cur.includes('exclusive of gst');
+  const isAutoIncl=cur.includes('inclusive of gst');
+  if(isAutoExcl||isAutoIncl||cur===''){
+    el.value=pt==='excl'
+      ?'The above quoted prices are exclusive of GST@'+gp+'%. GST will be charged extra as per applicable rates.'
+      :'The above quoted prices are inclusive of GST@'+gp+'%, Transportation to site and Insurance. Inspection charges will be extra at actual.';
+  }
+}
 function calcOfferTots(){
   const items=getOfferItems();
   const subTotal=items.reduce((s,i)=>s+i.amt,0);
@@ -3747,6 +3764,8 @@ function openNewOffer(){
   document.getElementById('offer-usestamp').checked=!!C.stampOffer;
   document.getElementById('offer-pricetype').value='incl';
   document.getElementById('offer-gstpct').value=18;
+  document.getElementById('offer-gsttype').value=S.cfg.gsttype||'intrastate';
+  autoOfferPriceNote();
   document.getElementById('offer-itbody').innerHTML='';
   refreshOfferCustDL();
   addOfferRow();
@@ -3781,6 +3800,7 @@ function editOffer(id){
   document.getElementById('offer-usestamp').checked=o.useStamp!==undefined?!!o.useStamp:!!S.cfg.stampOffer;
   document.getElementById('offer-pricetype').value=o.priceType||'incl';
   document.getElementById('offer-gstpct').value=o.gstPct!=null?o.gstPct:18;
+  document.getElementById('offer-gsttype').value=o.gstType||S.cfg.gsttype||'intrastate';
   document.getElementById('offer-itbody').innerHTML='';
   (o.items||[]).forEach(it=>addOfferRow(it));
   if(!(o.items||[]).length)addOfferRow();
@@ -3806,7 +3826,7 @@ function saveOffer(){
     subject:document.getElementById('offer-subject').value,
     custName,custAddr,custPhone,custEmail,
     project:document.getElementById('offer-project').value,
-    items,priceType:t.priceType,gstPct:t.gstPct,subTotal:t.subTotal,taxable:t.taxable,gstAmt:t.gstAmt,total:t.total,
+    items,priceType:t.priceType,gstPct:t.gstPct,gstType:document.getElementById('offer-gsttype').value,subTotal:t.subTotal,taxable:t.taxable,gstAmt:t.gstAmt,total:t.total,
     priceNote:document.getElementById('offer-pricenote').value,
     lining:document.getElementById('offer-lining').value,
     unload:document.getElementById('offer-unload').value,
@@ -4176,13 +4196,64 @@ function buildOfferPDF(o){
       '<td style="border:1px solid #999;padding:5px 6px;text-align:right">'+FN(it.rate)+'</td>'+
       '<td style="border:1px solid #999;padding:5px 6px;text-align:right">'+FN(it.amt)+'</td></tr>';
   });
-  iRows+='<tr style="font-weight:bold;background:#f5f5f5"><td style="border:1px solid #999;padding:5px 6px;text-align:center">Total</td><td style="border:1px solid #999;padding:5px 6px"></td>'+
-    '<td style="border:1px solid #999;padding:5px 6px;text-align:right">'+FN(totalQty)+'</td>'+
-    '<td style="border:1px solid #999;padding:5px 6px"></td>'+
-    '<td style="border:1px solid #999;padding:5px 6px;text-align:right">Rs. '+FN(o.total)+'</td></tr>';
+  const gstPct=V(o.gstPct)||0;
+  const taxable=V(o.taxable);
+  const gstAmt=V(o.gstAmt);
+  const grandTotal=V(o.total);
+  const priceType=o.priceType||'incl';
+  const gstType=o.gstType||S.cfg.gsttype||'intrastate';
+  const isIntra=gstType==='intrastate';
+  const halfGst=gstAmt/2;
+  // Table has 5 cols: Size | Class | Qty(RMT) | Price(Rs/Mtr) | Total(Rs.)
+  // Footer rows: col1+col2 = label (colspan=2), col3 = qty or empty, col4 = empty, col5 = amount
+  const td='border:1px solid #999;padding:4px 6px;';
+  function fRow(label,qtyVal,amtVal,bold,darker){
+    const bg=darker?'background:#e8e8e8':'background:#f5f5f5';
+    const bw=bold?'font-weight:bold':'';
+    return'<tr style="'+bg+(bw?';'+bw:'')+'">'+
+      '<td colspan="2" style="'+td+'text-align:right;'+(bw?bw+';':'')+'">'+label+'</td>'+
+      '<td style="'+td+'text-align:right;font-style:italic;color:#444;font-size:0.9em">'+(qtyVal!=null?FN(qtyVal)+' RMT':'')+'</td>'+
+      '<td style="'+td+'"></td>'+
+      '<td style="'+td+'text-align:right;'+(bw?bw+';':'')+'">Rs. '+FN(amtVal)+'</td></tr>';
+  }
+  function fRowGST(label,amtVal){
+    return'<tr style="background:#f5f5f5">'+
+      '<td colspan="2" style="'+td+'text-align:right">'+label+'</td>'+
+      '<td style="'+td+'"></td>'+
+      '<td style="'+td+'"></td>'+
+      '<td style="'+td+'text-align:right">Rs. '+FN(amtVal)+'</td></tr>';
+  }
+  if(priceType==='excl'){
+    iRows+=fRow('<b>Sub Total (Taxable Value)</b>',totalQty,taxable,false,false);
+    if(isIntra){
+      iRows+=fRowGST('CGST @ '+gstPct/2+'%',halfGst);
+      iRows+=fRowGST('SGST @ '+gstPct/2+'%',halfGst);
+    } else {
+      iRows+=fRowGST('IGST @ '+gstPct+'%',gstAmt);
+    }
+    iRows+=fRow('<b>Grand Total (Incl. GST)</b>',null,grandTotal,true,true);
+  } else {
+    iRows+=fRow('<b>Total</b>',totalQty,grandTotal,false,false);
+    if(isIntra){
+      iRows+=fRowGST('of which CGST @ '+gstPct/2+'% (incl.)',halfGst);
+      iRows+=fRowGST('of which SGST @ '+gstPct/2+'% (incl.)',halfGst);
+    } else {
+      iRows+=fRowGST('of which IGST @ '+gstPct+'% (incl.)',gstAmt);
+    }
+    iRows+=fRowGST('Taxable Value',taxable);
+  }
 
   const notes=[];
-  if(o.priceNote)notes.push(o.priceNote);
+  // Auto-generate price note based on priceType; use saved text only if user customised it
+  const autoNoteExcl='The above quoted prices are exclusive of GST@'+gstPct+'%. GST will be charged extra as per applicable rates.';
+  const autoNoteIncl='The above quoted prices are inclusive of GST@'+gstPct+'%, Transportation to site and Insurance. Inspection charges will be extra at actual.';
+  const autoNote=priceType==='excl'?autoNoteExcl:autoNoteIncl;
+  const priceNoteText=o.priceNote||autoNote;
+  // Replace any legacy "exclusive/inclusive" mismatch — if saved note contradicts current priceType, use auto
+  const noteHasExcl=priceNoteText.toLowerCase().includes('exclusive');
+  const noteHasIncl=priceNoteText.toLowerCase().includes('inclusive');
+  const effectivePriceNote=(noteHasExcl&&priceType==='incl')||(noteHasIncl&&priceType==='excl')?autoNote:priceNoteText;
+  if(effectivePriceNote)notes.push(effectivePriceNote);
   if(o.lining)notes.push('Internal Lining : '+o.lining);
   if(o.unload)notes.push('Unloading Charges : '+o.unload);
   if(o.payTerms)notes.push('Payment : '+o.payTerms);
@@ -4263,10 +4334,15 @@ async function renderOfferToPDF(o){
   const zone=document.getElementById('pzone');
   zone.innerHTML=buildOfferPDF(o);
   zone.style.cssText='position:fixed;left:0;top:0;width:794px;background:#fff;z-index:9999;pointer-events:none';
+  // Force 794px viewport so mobile doesn't reflow the layout
+  const vp=document.querySelector('meta[name="viewport"]');
+  const vpOrig=vp?vp.content:'';
+  if(vp)vp.content='width=794';
   await new Promise(r=>setTimeout(r,500));
   const el=zone.firstElementChild;
-  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
+  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794,scrollX:0,scrollY:0});
   zone.innerHTML='';zone.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
+  if(vp)vp.content=vpOrig;
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   const PW=pdf.internal.pageSize.getWidth(),PH=pdf.internal.pageSize.getHeight();
