@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2247,6 +2245,36 @@ function prevInv(id){
   openM('prev-modal');
 }
 
+// ── shared PDF page painter ──
+// Fixes two bugs that used to live in every renderXToPDF function:
+// 1) BLUR: the old code always drew the image at fixed height PH ("addImage(...,PW,PH)")
+//    even when the real content was shorter/taller than a page, so the image got
+//    stretched/squashed non-uniformly — that distortion is what looked like blurriness.
+//    Here we always preserve the canvas's true aspect ratio, so nothing is stretched.
+// 2) UNNECESSARY 2-PAGE SPLITS: the old code split into a 2nd page for even a few mm of
+//    overflow (e.g. one long note line), leaving an almost-empty second page. Now, any
+//    overflow within FIT_TOLERANCE (8%) is shrunk slightly to still fit on one page —
+//    a real multi-page split only happens when content genuinely doesn't fit.
+function paintPDFPage(pdf,canvas,PW,PH,imgH){
+  const FIT_TOLERANCE=1.08;
+  if(imgH<=PH*FIT_TOLERANCE){
+    const h=Math.min(imgH,PH);
+    const w=PW*(h/imgH);
+    const x=(PW-w)/2;
+    pdf.addImage(canvas.toDataURL('image/png'),'PNG',x,0,w,h);
+  }else{
+    let yPx=0;const pxMm=canvas.width/PW;
+    while(yPx<canvas.height){
+      if(yPx>0)pdf.addPage();
+      const sh=Math.min(PH*pxMm,canvas.height-yPx);
+      const sc=document.createElement('canvas');sc.width=canvas.width;sc.height=sh;
+      const sctx=sc.getContext('2d');sctx.fillStyle='#fff';sctx.fillRect(0,0,sc.width,sc.height);
+      sctx.drawImage(canvas,0,yPx,canvas.width,sh,0,0,canvas.width,sh);
+      pdf.addImage(sc.toDataURL('image/png'),'PNG',0,0,PW,sh/pxMm);
+      yPx+=PH*pxMm;
+    }
+  }
+}
 // ── PDF RENDER ──
 async function renderToPDF(inv){
   const zone=document.getElementById('pzone');
@@ -2254,15 +2282,13 @@ async function renderToPDF(inv){
   zone.style.cssText='position:fixed;left:0;top:0;width:794px;background:#fff;z-index:9999;pointer-events:none';
   await new Promise(r=>setTimeout(r,500));
   const el=zone.firstElementChild;
-  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
+  const canvas=await html2canvas(el,{scale:3,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
   zone.innerHTML='';zone.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   const PW=pdf.internal.pageSize.getWidth(),PH=pdf.internal.pageSize.getHeight();
   const imgH=(canvas.height/canvas.width)*PW;
-  const JQ=0.82; // JPEG quality — keeps file small while staying sharp for text/tables
-  if(imgH<=PH){pdf.addImage(canvas.toDataURL('image/jpeg',JQ),'JPEG',0,0,PW,PH);}
-  else{let yPx=0;const pxMm=canvas.width/PW;while(yPx<canvas.height){if(yPx>0)pdf.addPage();const sh=Math.min(PH*pxMm,canvas.height-yPx);const sc=document.createElement('canvas');sc.width=canvas.width;sc.height=sh;const sctx=sc.getContext('2d');sctx.fillStyle='#fff';sctx.fillRect(0,0,sc.width,sc.height);sctx.drawImage(canvas,0,yPx,canvas.width,sh,0,0,canvas.width,sh);pdf.addImage(sc.toDataURL('image/jpeg',JQ),'JPEG',0,0,PW,sh/pxMm);yPx+=PH*pxMm;}}
+  paintPDFPage(pdf,canvas,PW,PH,imgH);
   return pdf;
 }
 async function dlPDF(){const inv=S.invoices.find(i=>i.id===S.curPrev);if(!inv)return;toast('Generating PDF…');try{const pdf=await renderToPDF(inv);pdf.save(inv.number+'.pdf');toast('PDF downloaded ✓');}catch(e){console.error(e);toast('PDF error – try again');}}
@@ -2857,6 +2883,7 @@ function prevPO(id){
   S.curPOPrev=id;
   const po=S.purchaseOrders.find(p=>p.id===id);
   document.getElementById('po-prev-body').innerHTML=buildPOPDF(po);
+  applyPageBreaks(document.getElementById('po-prev-body').firstElementChild);
   const sup=S.suppliers.find(s=>s.name===po.supName);
   document.getElementById('po-email-btn').style.display=(po.supEmail||(sup&&sup.email))?'inline-flex':'none';
   openM('po-prev-modal');
@@ -2864,7 +2891,7 @@ function prevPO(id){
 function buildPOPDF(po){
   const C=S.cfg;
   const items=po.items||[];
-  const minR=Math.max(items.length,6);
+  const minR=Math.max(items.length,3);
   let iRows='';
   items.forEach((it,i)=>{
     const taxLbl=(po.taxType==='igst'?'IGST@'+po.taxPct+'%':'CGST+SGST@'+po.taxPct+'%')+(po.priceType==='incl'?' (incl)':'');
@@ -2974,14 +3001,11 @@ function buildPOPDF(po){
         </div>
       </div>
   `;
-  const spacer=pageBreakSpacer(partA,partB,{pageW:738,headerH:152,contTop:152});
-
   return `<div style="position:relative;width:794px;min-height:1122px;font-family:Arial,Helvetica,sans-serif;font-size:${fz}px;color:#000;box-sizing:border-box;background-image:url(${LH_B64});background-repeat:repeat-y;background-size:794px 1122px;background-position:top left">
     <!-- OVERLAY CONTENT sits on top of the repeating letterhead -->
     <div style="position:relative;z-index:1;padding-top:152px;padding-left:28px;padding-right:28px;padding-bottom:80px">
       ${partA}
-      ${spacer}
-      ${partB}
+      <div class="pb-guard" data-pb-safe="60" data-pb-cont="152">${partB}</div>
     </div>
   </div>`;
 }
@@ -2991,15 +3015,14 @@ async function renderPOToPDF(po){
   zone.style.cssText='position:fixed;left:0;top:0;width:794px;background:#fff;z-index:9999;pointer-events:none';
   await new Promise(r=>setTimeout(r,500));
   const el=zone.firstElementChild;
-  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
+  applyPageBreaks(el);
+  const canvas=await html2canvas(el,{scale:3,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
   zone.innerHTML='';zone.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   const PW=pdf.internal.pageSize.getWidth(),PH=pdf.internal.pageSize.getHeight();
   const imgH=(canvas.height/canvas.width)*PW;
-  const JQ=0.82;
-  if(imgH<=PH){pdf.addImage(canvas.toDataURL('image/jpeg',JQ),'JPEG',0,0,PW,PH);}
-  else{let yPx=0;const pxMm=canvas.width/PW;while(yPx<canvas.height){if(yPx>0)pdf.addPage();const sh=Math.min(PH*pxMm,canvas.height-yPx);const sc=document.createElement('canvas');sc.width=canvas.width;sc.height=sh;const sctx=sc.getContext('2d');sctx.fillStyle='#fff';sctx.fillRect(0,0,sc.width,sc.height);sctx.drawImage(canvas,0,yPx,canvas.width,sh,0,0,canvas.width,sh);pdf.addImage(sc.toDataURL('image/jpeg',JQ),'JPEG',0,0,PW,sh/pxMm);yPx+=PH*pxMm;}}
+  paintPDFPage(pdf,canvas,PW,PH,imgH);
   return pdf;
 }
 async function dlPOPDF(){
@@ -3101,13 +3124,10 @@ function buildCustStatementPDF(name){
         </div>
       </div>
   `;
-  const spacer=pageBreakSpacer(partA,partB,{pageW:738,headerH:152,contTop:152});
-
   return `<div style="position:relative;width:794px;min-height:1122px;font-family:Arial,Helvetica,sans-serif;font-size:${fs}px;color:#000;box-sizing:border-box;background-image:url(${LH_B64});background-repeat:repeat-y;background-size:794px 1122px;background-position:top left">
     <div style="position:relative;z-index:1;padding-top:152px;padding-left:28px;padding-right:28px;padding-bottom:80px">
       ${partA}
-      ${spacer}
-      ${partB}
+      <div class="pb-guard" data-pb-safe="190" data-pb-cont="152">${partB}</div>
     </div>
   </div>`;
 }
@@ -3117,15 +3137,14 @@ async function renderCustStatementToPDF(name){
   zone.style.cssText='position:fixed;left:0;top:0;width:794px;background:#fff;z-index:9999;pointer-events:none';
   await new Promise(r=>setTimeout(r,500));
   const el=zone.firstElementChild;
-  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
+  applyPageBreaks(el);
+  const canvas=await html2canvas(el,{scale:3,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
   zone.innerHTML='';zone.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   const PW=pdf.internal.pageSize.getWidth(),PH=pdf.internal.pageSize.getHeight();
   const imgH=(canvas.height/canvas.width)*PW;
-  const JQ=0.82;
-  if(imgH<=PH){pdf.addImage(canvas.toDataURL('image/jpeg',JQ),'JPEG',0,0,PW,PH);}
-  else{let yPx=0;const pxMm=canvas.width/PW;while(yPx<canvas.height){if(yPx>0)pdf.addPage();const sh=Math.min(PH*pxMm,canvas.height-yPx);const sc=document.createElement('canvas');sc.width=canvas.width;sc.height=sh;const sctx=sc.getContext('2d');sctx.fillStyle='#fff';sctx.fillRect(0,0,sc.width,sc.height);sctx.drawImage(canvas,0,yPx,canvas.width,sh,0,0,canvas.width,sh);pdf.addImage(sc.toDataURL('image/jpeg',JQ),'JPEG',0,0,PW,sh/pxMm);yPx+=PH*pxMm;}}
+  paintPDFPage(pdf,canvas,PW,PH,imgH);
   return pdf;
 }
 async function downloadCustStatement(name){
@@ -3359,13 +3378,13 @@ async function renderPayslipToPDF(emp,monthKey){
   zone.style.cssText='position:fixed;left:0;top:0;width:794px;background:#fff;z-index:9999;pointer-events:none';
   await new Promise(r=>setTimeout(r,400));
   const el=zone.firstElementChild;
-  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
+  const canvas=await html2canvas(el,{scale:3,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794});
   zone.innerHTML='';zone.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   const PW=pdf.internal.pageSize.getWidth();
   const imgH=(canvas.height/canvas.width)*PW;
-  pdf.addImage(canvas.toDataURL('image/jpeg',0.85),'JPEG',0,0,PW,imgH);
+  pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,PW,imgH);
   return pdf;
 }
 async function dlPayslipPDF(){
@@ -4155,33 +4174,35 @@ function prevOffer(id){
   S.curOfferPrev=id;
   const o=S.offers.find(x=>x.id===id);
   document.getElementById('offer-prev-body').innerHTML=buildOfferPDF(o);
+  applyPageBreaks(document.getElementById('offer-prev-body').firstElementChild);
   const cust=S.customers.find(c=>c.name===o.custName);
   document.getElementById('offer-email-btn').style.display=(o.custEmail||(cust&&cust.email))?'inline-flex':'none';
   openM('offer-prev-modal');
 }
 // ── PAGE-BREAK HELPER (keeps content off the decorative letterhead footer) ──
-function measureHTML(html,widthPx){
-  const div=document.createElement('div');
-  div.style.cssText='position:fixed;left:-99999px;top:0;width:'+widthPx+'px;visibility:hidden;font-family:Arial,Helvetica,sans-serif';
-  div.innerHTML=html;
-  document.body.appendChild(div);
-  const h=div.offsetHeight;
-  document.body.removeChild(div);
-  return h;
-}
-// Splits [partA, partB] with a spacer div so partB never starts inside the unsafe
-// bottom zone of a printed page (where the letterhead's decorative graphic sits).
-function pageBreakSpacer(partAHtml,partBHtml,opts){
-  const o=Object.assign({pageW:738,pageH:1122,headerH:152,safeBottom:190,contTop:152},opts||{});
-  const hA=measureHTML('<div style="padding-top:'+o.headerH+'px">'+partAHtml+'</div>',o.pageW)-o.headerH;
-  const hB=measureHTML(partBHtml,o.pageW);
-  const usable=o.pageH-o.safeBottom;
-  const curY=o.headerH+hA;
-  if(curY<=usable && (curY+hB)>usable){
-    const spacer=(o.pageH+o.contTop)-curY;
-    return '<div style="height:'+Math.max(0,spacer)+'px"></div>';
-  }
-  return '';
+// Builders mark their tail section (notes/signature) with class="pb-guard" and
+// data-pb-safe/data-pb-cont attributes. This runs AFTER that HTML is actually in
+// the DOM, so it reads real, already-laid-out offsetTop/offsetHeight — no guessing
+// at text-wrap widths or image sizes in a disconnected clone. It only inserts a
+// spacer (pushing the guarded block to the next letterhead tile) when the block
+// truly straddles the unsafe bottom zone; short content that already fits on one
+// page is left completely untouched.
+function applyPageBreaks(root){
+  if(!root)return;
+  const PAGE_H=1122;
+  root.querySelectorAll('.pb-guard').forEach(el=>{
+    const safeBottom=parseFloat(el.dataset.pbSafe)||190;
+    const contTop=parseFloat(el.dataset.pbCont)||152;
+    const top=el.offsetTop,h=el.offsetHeight;
+    const pageIdx=Math.floor(top/PAGE_H);
+    const pageBottomSafe=(pageIdx+1)*PAGE_H-safeBottom;
+    if(top<pageBottomSafe && (top+h)>pageBottomSafe){
+      const nextPageTop=(pageIdx+1)*PAGE_H+contTop;
+      const spacer=document.createElement('div');
+      spacer.style.height=Math.max(0,nextPageTop-top)+'px';
+      el.parentNode.insertBefore(spacer,el);
+    }
+  });
 }
 function buildOfferPDF(o){
   const C=S.cfg;
@@ -4320,13 +4341,10 @@ function buildOfferPDF(o){
         </div>
       </div>
   `;
-  const spacer=pageBreakSpacer(partA,partB,{pageW:738,headerH:152,contTop:152});
-
   return `<div style="position:relative;width:794px;min-height:1122px;font-family:Arial,Helvetica,sans-serif;font-size:${fs}px;color:#000;box-sizing:border-box;background-image:url(${OFFER_LH_B64});background-repeat:repeat-y;background-size:794px 1122px;background-position:top left">
     <div style="position:relative;z-index:1;padding-top:152px;padding-left:28px;padding-right:28px;padding-bottom:80px">
       ${partA}
-      ${spacer}
-      ${partB}
+      <div class="pb-guard" data-pb-safe="190" data-pb-cont="152">${partB}</div>
     </div>
   </div>`;
 }
@@ -4340,16 +4358,15 @@ async function renderOfferToPDF(o){
   if(vp)vp.content='width=794';
   await new Promise(r=>setTimeout(r,500));
   const el=zone.firstElementChild;
-  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794,scrollX:0,scrollY:0});
+  applyPageBreaks(el);
+  const canvas=await html2canvas(el,{scale:3,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794,scrollX:0,scrollY:0});
   zone.innerHTML='';zone.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
   if(vp)vp.content=vpOrig;
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   const PW=pdf.internal.pageSize.getWidth(),PH=pdf.internal.pageSize.getHeight();
   const imgH=(canvas.height/canvas.width)*PW;
-  const JQ=0.82;
-  if(imgH<=PH){pdf.addImage(canvas.toDataURL('image/jpeg',JQ),'JPEG',0,0,PW,PH);}
-  else{let yPx=0;const pxMm=canvas.width/PW;while(yPx<canvas.height){if(yPx>0)pdf.addPage();const sh=Math.min(PH*pxMm,canvas.height-yPx);const sc=document.createElement('canvas');sc.width=canvas.width;sc.height=sh;const sctx=sc.getContext('2d');sctx.fillStyle='#fff';sctx.fillRect(0,0,sc.width,sc.height);sctx.drawImage(canvas,0,yPx,canvas.width,sh,0,0,canvas.width,sh);pdf.addImage(sc.toDataURL('image/jpeg',JQ),'JPEG',0,0,PW,sh/pxMm);yPx+=PH*pxMm;}}
+  paintPDFPage(pdf,canvas,PW,PH,imgH);
   return pdf;
 }
 async function dlOfferPDF(){
