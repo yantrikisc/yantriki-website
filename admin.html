@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -321,10 +323,10 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <div class="ni" onclick="go('suppliers')"><span class="ic">🏭</span>Suppliers</div>
     <div class="ni" onclick="go('reports')"><span class="ic">📈</span>Reports</div>
     <div class="ni" onclick="go('po')"><span class="ic">📑</span>Purchase Orders</div>
+    <div class="ni" onclick="go('suppayments')"><span class="ic">🏦</span>Supplier Payments</div>
     <div class="ni" onclick="go('offers')"><span class="ic">📨</span>Offers</div>
-    <div class="ni" onclick="go('confirmed')"><span class="ic">✅</span>Confirmed Orders</div>
+    <div class="ni" onclick="go('linkage')"><span class="ic">🔗</span>Linkage</div>
     <div class="ni" onclick="go('calldiary')"><span class="ic">📞</span>Call Diary</div>
-    <div class="ni" onclick="go('staff')"><span class="ic">🧑‍💼</span>Staff</div>
     <div class="ni" onclick="go('history')"><span class="ic">🕘</span>History</div>
     <div class="ni" onclick="go('settings')"><span class="ic">⚙️</span>Settings</div>
   </nav>
@@ -474,7 +476,7 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
 <div id="page-suppliers" class="page">
   <div class="card">
     <div class="ch"><h3>🏭 Supplier Master</h3><button class="btn bp bsm" onclick="openSupM()">＋ Add Supplier</button></div>
-    <div class="tw"><table><thead><tr><th>Name</th><th>GSTIN</th><th>Phone</th><th>Email</th><th>Address</th><th>POs Placed</th><th>Total PO Value</th><th>Actions</th></tr></thead><tbody id="sup-tb"></tbody></table></div>
+    <div class="tw"><table><thead><tr><th>Name</th><th>GSTIN</th><th>Phone</th><th>Email</th><th>Address</th><th>POs</th><th>PO Value</th><th>Adv. Paid</th><th>Payments</th><th>Balance</th><th>Actions</th></tr></thead><tbody id="sup-tb"></tbody></table></div>
   </div>
 </div>
 
@@ -593,6 +595,90 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
 <div id="page-po" class="page">
   <div class="card"><div class="ch"><h3>📑 Purchase Orders</h3><button class="btn bp bsm" onclick="openNewPO()">＋ New Purchase Order</button></div>
     <div class="tw"><table><thead><tr><th>PO No.</th><th>Date</th><th>Supplier</th><th>Total</th><th>Actions</th></tr></thead><tbody id="po-tb"></tbody></table></div>
+  </div>
+</div>
+
+<div id="page-suppayments" class="page">
+  <div class="tabs">
+    <div class="tab active" onclick="setSupPayTab('advances',this)">Supplier Advances</div>
+    <div class="tab" onclick="setSupPayTab('payments',this)">Supplier Payments</div>
+    <div class="tab" onclick="setSupPayTab('ledger',this)">Supplier Ledger</div>
+  </div>
+  <div id="sup-advances-view">
+    <div class="card">
+      <div class="ch"><h3>🏦 Supplier Advances (Against PO)</h3><button class="btn bp bsm" onclick="openSupAdvM()">＋ Record Advance</button></div>
+      <div class="tw"><table><thead><tr><th>Ref #</th><th>Supplier</th><th>PO No.</th><th>Date</th><th>Amount</th><th>Mode</th><th>Reference</th><th>Note</th><th>Actions</th></tr></thead><tbody id="sup-adv-tb"></tbody></table></div>
+    </div>
+  </div>
+  <div id="sup-payments-view" style="display:none">
+    <div class="card">
+      <div class="ch"><h3>💸 Supplier Payments (Against PO)</h3><button class="btn bp bsm" onclick="openSupPayM()">＋ Record Payment</button></div>
+      <div class="tw"><table><thead><tr><th>Receipt #</th><th>Supplier</th><th>PO No.</th><th>Date</th><th>Amount</th><th>Mode</th><th>Reference</th><th>Note</th><th>Actions</th></tr></thead><tbody id="sup-pay-tb"></tbody></table></div>
+    </div>
+  </div>
+  <div id="sup-ledger-view" style="display:none">
+    <div class="card">
+      <div class="ch">
+        <h3>📒 Supplier Ledger</h3>
+        <select id="sup-ledger-select" onchange="renderSupLedger(this.value)" style="width:220px;font-size:13px"><option value="">— Select Supplier —</option></select>
+      </div>
+      <div id="sup-ledger-body" class="cb"><div class="empty"><div class="ei">🏭</div><p>Select a supplier above</p></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="page-linkage" class="page">
+  <div class="tabs">
+    <div class="tab active" onclick="setLinkTab('bundles',this)">All Bundles</div>
+    <div class="tab" onclick="setLinkTab('create',this)">＋ New Bundle</div>
+  </div>
+
+  <!-- ALL BUNDLES -->
+  <div id="link-bundles-view">
+    <div class="card">
+      <div class="ch"><h3>🔗 Transaction Bundles</h3><button class="btn bp bsm" onclick="setLinkTabByName('create')">＋ New Bundle</button></div>
+      <div id="lnk-bundle-list" class="cb" style="padding:14px"></div>
+    </div>
+  </div>
+
+  <!-- CREATE / EDIT BUNDLE -->
+  <div id="link-create-view" style="display:none">
+    <div class="card">
+      <div class="ch"><h3 id="lnk-create-title">➕ Create Transaction Bundle</h3></div>
+      <div class="cb">
+        <div class="fgrid" style="max-width:700px">
+          <div class="fg full">
+            <label>Bundle Name / Reference</label>
+            <input type="text" id="lnk-bname" placeholder="e.g. Project Alpha – Supply & Invoice">
+          </div>
+          <div class="fg full">
+            <label>Note (optional)</label>
+            <input type="text" id="lnk-bnote" placeholder="Brief description">
+          </div>
+          <div class="fg full" style="border-top:1px solid var(--br);padding-top:12px;margin-top:4px">
+            <label style="font-weight:700;font-size:12px;color:var(--sl);letter-spacing:.05em">SELECT OFFER</label>
+            <select id="lnk-b-offer" style="margin-top:6px"><option value="">— None —</option></select>
+          </div>
+          <div class="fg full">
+            <label style="font-weight:700;font-size:12px;color:var(--sl);letter-spacing:.05em">SELECT PURCHASE ORDER(S)</label>
+            <div id="lnk-b-po-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;min-height:36px;padding:8px;background:var(--bg);border:1px solid var(--br);border-radius:6px"></div>
+          </div>
+          <div class="fg full">
+            <label style="font-weight:700;font-size:12px;color:var(--sl);letter-spacing:.05em">SELECT INVOICE(S)</label>
+            <div id="lnk-b-inv-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;min-height:36px;padding:8px;background:var(--bg);border:1px solid var(--br);border-radius:6px"></div>
+          </div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px">
+          <button class="btn bp" onclick="saveBundle()">💾 Save Bundle</button>
+          <button class="btn bo" onclick="setLinkTabByName('bundles')">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUNDLE DETAIL VIEW -->
+  <div id="link-detail-view" style="display:none">
+    <div id="lnk-detail-body"></div>
   </div>
 </div>
 
@@ -1214,6 +1300,48 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
   </div>
 </div></div>
 
+<!-- SUPPLIER ADVANCE MODAL -->
+<div id="sup-adv-modal" class="mo" style="display:none"><div class="md" style="max-width:520px">
+  <div class="mh"><h3 id="sup-adv-mt">Record Supplier Advance</h3><button class="mc" onclick="closeM('sup-adv-modal')">×</button></div>
+  <div class="mb">
+    <div class="fgrid">
+      <div class="fg"><label>Ref #</label><input type="text" id="sa-ref" readonly></div>
+      <div class="fg"><label>Date</label><input type="date" id="sa-date"></div>
+      <div class="fg"><label>Supplier</label><select id="sa-sup" onchange="populatePOsForSup('sa-po','sa-sup')"><option value="">— Select Supplier —</option></select></div>
+      <div class="fg"><label>PO Number</label><select id="sa-po"><option value="">— Select PO (optional) —</option></select></div>
+      <div class="fg"><label>Amount (₹)</label><input type="number" id="sa-amt" min="0" step="0.01"></div>
+      <div class="fg"><label>Payment Mode</label><select id="sa-mode"><option>RTGS</option><option>NEFT</option><option>IMPS</option><option>Cheque</option><option>Cash</option><option>UPI</option><option>Other</option></select></div>
+      <div class="fg"><label>Bank Ref / UTR</label><input type="text" id="sa-ref2" placeholder="Transaction ID (optional)"></div>
+      <div class="fg full"><label>Note</label><input type="text" id="sa-note" placeholder="(optional)"></div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn bo" onclick="closeM('sup-adv-modal')">Cancel</button>
+    <button class="btn bp" onclick="saveSupAdv()">💾 Save</button>
+  </div>
+</div></div>
+
+<!-- SUPPLIER PAYMENT MODAL -->
+<div id="sup-pay-modal" class="mo" style="display:none"><div class="md" style="max-width:520px">
+  <div class="mh"><h3 id="sup-pay-mt">Record Supplier Payment</h3><button class="mc" onclick="closeM('sup-pay-modal')">×</button></div>
+  <div class="mb">
+    <div class="fgrid">
+      <div class="fg"><label>Receipt #</label><input type="text" id="sp-ref" readonly></div>
+      <div class="fg"><label>Date</label><input type="date" id="sp-date"></div>
+      <div class="fg"><label>Supplier</label><select id="sp-sup" onchange="populatePOsForSup('sp-po','sp-sup')"><option value="">— Select Supplier —</option></select></div>
+      <div class="fg"><label>PO Number</label><select id="sp-po"><option value="">— Select PO (optional) —</option></select></div>
+      <div class="fg"><label>Amount (₹)</label><input type="number" id="sp-amt" min="0" step="0.01"></div>
+      <div class="fg"><label>Payment Mode</label><select id="sp-mode"><option>RTGS</option><option>NEFT</option><option>IMPS</option><option>Cheque</option><option>Cash</option><option>UPI</option><option>Other</option></select></div>
+      <div class="fg"><label>Bank Ref / UTR</label><input type="text" id="sp-ref2" placeholder="Transaction ID (optional)"></div>
+      <div class="fg full"><label>Note</label><input type="text" id="sp-note" placeholder="(optional)"></div>
+    </div>
+  </div>
+  <div class="mf">
+    <button class="btn bo" onclick="closeM('sup-pay-modal')">Cancel</button>
+    <button class="btn bp" onclick="saveSupPay()">💾 Save</button>
+  </div>
+</div></div>
+
 <div id="reset-modal" class="mo" style="display:none"><div class="md" style="max-width:400px">
   <div class="mh"><h3 style="color:#dc2626">⚠️ Reset Everything</h3><button class="mc" onclick="closeM('reset-modal')">×</button></div>
   <div class="mb">
@@ -1338,9 +1466,9 @@ window.applyRoleUI=function(role){
   if(typeof renderAll==='function')renderAll();
 };
 let S={
-  invoices:[],products:[],customers:[],advances:[],payments:[],purchaseOrders:[],suppliers:[],offers:[],confirmedOrders:[],history:[],employees:[],callDiary:[],
-  nextN:1,nextAdv:1,nextPay:1,nextCust:1,nextPO:1,nextOffer:1,nextCO:1,
-  eInvId:null,eProdId:null,eCustId:null,eAdvId:null,ePayId:null,ePOId:null,eOfferId:null,eCOId:null,eEmpId:null,eCallId:null,
+  invoices:[],products:[],customers:[],advances:[],payments:[],purchaseOrders:[],suppliers:[],offers:[],confirmedOrders:[],history:[],employees:[],callDiary:[],supAdvances:[],supPayments:[],linkages:[],
+  nextN:1,nextAdv:1,nextPay:1,nextCust:1,nextPO:1,nextOffer:1,nextCO:1,nextSupAdv:1,nextSupPay:1,
+  eInvId:null,eProdId:null,eCustId:null,eAdvId:null,ePayId:null,ePOId:null,eOfferId:null,eCOId:null,eEmpId:null,eCallId:null,eSupAdvId:null,eSupPayId:null,
   curPrev:null,curPOPrev:null,curOfferPrev:null,fStat:'all',fTxt:'',rP:'monthly',
   cfg:{name:'Yantriki Suppliers and Consultancy',gst:'23AADFY9269N1ZD',pan:'AADFY9269N',phone:'8815184776',email:'info@yantrikisc.in',a1:'Plot No. 347, Mandakini Kolar Road',a2:'Bhopal (MP) 462042',juris:'Bhopal',bank:'',aname:'',acno:'',ifsc:'',branch:'',actype:'Current',upi:'',prefix:'YSC',gsttype:'intrastate',sign:'Authorised Signatory',terms:30,footer:'Delivery:- Freight Charges FREE ON ROAD',poprefix:'YSC-PO',potaxtype:'igst',potaxpct:18,posign:'Authorised Signatory',podel:'',popt:'',pobill:'',ponotes:'',offerprefix:'YSC-OFR',offersign:'Authorised Signatory',offerfontsize:'11',offerpricenote:'The below quoted prices are inclusive of GST@18%, Transportation to site and Insurance.',offernotes:'Looking forward for your valuable order.',stampInv:false,stampPO:false,stampOffer:true,coprefix:'CO'}
 };
@@ -1387,8 +1515,8 @@ function fieldDiff(oldObj,newObj,fieldMap){
 }
 
 // ── STORAGE ──
-function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,confirmedOrders:S.confirmedOrders,history:S.history,employees:S.employees,callDiary:S.callDiary,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,nextCO:S.nextCO,cfg:S.cfg});}
-function applyData(raw){try{const p=JSON.parse(raw);S.invoices=p.invoices||[];S.products=p.products||[];S.customers=p.customers||[];S.advances=p.advances||[];S.payments=p.payments||[];S.purchaseOrders=p.purchaseOrders||[];S.suppliers=p.suppliers||[];S.offers=p.offers||[];S.confirmedOrders=p.confirmedOrders||[];S.history=p.history||[];S.employees=p.employees||[];S.callDiary=p.callDiary||[];pruneHistory();S.nextN=p.nextN||1;S.nextAdv=p.nextAdv||1;S.nextPay=p.nextPay||1;S.nextCust=p.nextCust||1;S.nextPO=p.nextPO||1;S.nextOffer=p.nextOffer||1;S.nextCO=p.nextCO||1;S.cfg=Object.assign({},S.cfg,p.cfg||{});backfillCustIds();return true;}catch(e){return false;}}
+function payload(){return JSON.stringify({invoices:S.invoices,products:S.products,customers:S.customers,advances:S.advances,payments:S.payments,purchaseOrders:S.purchaseOrders,suppliers:S.suppliers,offers:S.offers,confirmedOrders:S.confirmedOrders,history:S.history,employees:S.employees,callDiary:S.callDiary,supAdvances:S.supAdvances,supPayments:S.supPayments,linkages:S.linkages,nextN:S.nextN,nextAdv:S.nextAdv,nextPay:S.nextPay,nextCust:S.nextCust,nextPO:S.nextPO,nextOffer:S.nextOffer,nextCO:S.nextCO,nextSupAdv:S.nextSupAdv,nextSupPay:S.nextSupPay,cfg:S.cfg});}
+function applyData(raw){try{const p=JSON.parse(raw);S.invoices=p.invoices||[];S.products=p.products||[];S.customers=p.customers||[];S.advances=p.advances||[];S.payments=p.payments||[];S.purchaseOrders=p.purchaseOrders||[];S.suppliers=p.suppliers||[];S.offers=p.offers||[];S.confirmedOrders=p.confirmedOrders||[];S.history=p.history||[];S.employees=p.employees||[];S.callDiary=p.callDiary||[];S.supAdvances=p.supAdvances||[];S.supPayments=p.supPayments||[];S.linkages=p.linkages||[];pruneHistory();S.nextN=p.nextN||1;S.nextAdv=p.nextAdv||1;S.nextPay=p.nextPay||1;S.nextCust=p.nextCust||1;S.nextPO=p.nextPO||1;S.nextOffer=p.nextOffer||1;S.nextCO=p.nextCO||1;S.nextSupAdv=p.nextSupAdv||1;S.nextSupPay=p.nextSupPay||1;S.cfg=Object.assign({},S.cfg,p.cfg||{});backfillCustIds();return true;}catch(e){return false;}}
 async function persist(){
   const d=payload();
   try{localStorage.setItem(STORE_KEY,d);}catch(e){}
@@ -1427,8 +1555,8 @@ function doReset(){
   // Reset all data, keep settings/cfg intact
   setTimeout(()=>{
     S.invoices=[];S.products=[];S.customers=[];S.advances=[];S.payments=[];
-    S.purchaseOrders=[];S.suppliers=[];S.offers=[];S.confirmedOrders=[];S.history=[];S.employees=[];S.callDiary=[];
-    S.nextN=1;S.nextAdv=1;S.nextPay=1;S.nextCust=1;S.nextPO=1;S.nextOffer=1;S.nextCO=1;
+    S.purchaseOrders=[];S.suppliers=[];S.offers=[];S.confirmedOrders=[];S.history=[];S.employees=[];S.callDiary=[];S.supAdvances=[];S.supPayments=[];S.linkages=[];
+    S.nextN=1;S.nextAdv=1;S.nextPay=1;S.nextCust=1;S.nextPO=1;S.nextOffer=1;S.nextCO=1;S.nextSupAdv=1;S.nextSupPay=1;
     S.eInvId=null;S.eProdId=null;S.eCustId=null;S.eAdvId=null;S.ePayId=null;S.ePOId=null;S.eSupId=null;S.eOfferId=null;
     S.curPrev=null;S.curPOPrev=null;S.curOfferPrev=null;S.fStat='all';S.fTxt='';
     window._booted=false;
@@ -1484,14 +1612,14 @@ function custByAny(val){
 }
 
 // ── NAVIGATION ──
-const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','offers','confirmed','staff','calldiary','history','settings'];
-const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',offers:'Offers',confirmed:'Confirmed Orders',staff:'Staff',calldiary:'Call Diary',history:'Activity History',settings:'Settings'};
+const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','suppayments','linkage','offers','calldiary','history','settings'];
+const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',suppayments:'Supplier Payments',linkage:'Document Linkage',offers:'Offers',calldiary:'Call Diary',history:'Activity History',settings:'Settings'};
 const TOP_BTN_MAP={
   dashboard:null, invoices:['＋ New Invoice','openNewInv'],
   advances:['＋ Record Advance','openAdvM'], payments:['＋ Record Payment','openPayM'],
   products:['＋ Add Product','openProdM'], customers:['＋ Add Customer','openCustM'],
   po:['＋ New Purchase Order','openNewPO'], offers:['＋ New Offer','openNewOffer'],
-  confirmed:['＋ New Confirmed Order','openNewConfirmed'],
+  suppayments:null, linkage:null,
   reports:null, settings:null
 };
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open');}
@@ -1519,8 +1647,9 @@ function go(p){
   if(p==='settings')loadSett();
   if(p==='reports')renderReports();
   if(p==='history')renderHistory();
-  if(p==='staff')renderEmpTbl();
   if(p==='calldiary')renderCallDiaryTbl();
+  if(p==='suppayments')renderSupPayPages();
+  if(p==='linkage')renderLinkagePages();
   renderAll();
 }
 document.getElementById('top-btn').addEventListener('click',function(){
@@ -2652,25 +2781,44 @@ function renderReports(){
 }
 
 // ── RENDER ALL ──
-function renderAll(){renderDash();renderInvTbl();renderAdvTbl();renderPayTbl();renderProds();renderCusts();renderSupTbl();renderPOTbl();renderOfferTbl();renderConfirmedTbl();}
+function renderAll(){renderDash();renderInvTbl();renderAdvTbl();renderPayTbl();renderProds();renderCusts();renderSupTbl();renderPOTbl();renderOfferTbl();renderSupAdvTbl();renderSupPayTbl();}
 
 // ── SUPPLIERS PAGE ──
 function renderSupTbl(){
   const tb=document.getElementById('sup-tb');if(!tb)return;
   tb.innerHTML=(S.suppliers||[]).map(s=>{
-    const sPos=S.purchaseOrders.filter(po=>po.supName===s.name);
+    const sPos=(S.purchaseOrders||[]).filter(po=>po.supName===s.name);
     const sTotal=sPos.reduce((t,po)=>t+V(po.total),0);
+    const sAdv=(S.supAdvances||[]).filter(a=>a.sup===s.name).reduce((t,a)=>t+V(a.amt),0);
+    const sPay=(S.supPayments||[]).filter(p=>p.sup===s.name).reduce((t,p)=>t+V(p.amt),0);
+    const sBal=sTotal-sAdv-sPay;
     return '<tr>'+
       '<td style="font-weight:700">'+esc(s.name)+'</td>'+
       '<td>'+esc(s.gst||'—')+'</td>'+
       '<td>'+esc(s.phone||'—')+'</td>'+
       '<td>'+esc(s.email||'—')+'</td>'+
-      '<td style="font-size:11px;max-width:160px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc((s.addr||'—').replace(/\n/g,', '))+'</td>'+
+      '<td style="font-size:11px;max-width:140px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+esc((s.addr||'—').replace(/\n/g,', '))+'</td>'+
       '<td style="text-align:center">'+sPos.length+'</td>'+
-      '<td style="font-weight:700;color:var(--rust)">'+FN(sTotal)+'</td>'+
-      '<td><button class="btn bg bsm" onclick="openSupM(\''+s.id+'\')">✏️</button> <button class="btn bg bsm" onclick="delSup(\''+s.id+'\')">🗑</button></td>'+
+      '<td style="font-weight:700;color:var(--rust)">'+F(sTotal)+'</td>'+
+      '<td style="color:var(--am)">'+F(sAdv)+'</td>'+
+      '<td style="color:var(--gn)">'+F(sPay)+'</td>'+
+      '<td style="font-weight:700;color:'+(sBal>0?'var(--rd)':'var(--gn)')+'">'+F(sBal)+'</td>'+
+      '<td><button class="btn bg bsm" onclick="openSupM(\''+s.id+'\')">✏️</button> <button class="btn bg bsm" title="View Ledger" onclick="viewSupLedger(\''+esc(s.name)+'\')">📒</button> <button class="btn bg bsm" onclick="delSup(\''+s.id+'\')">🗑</button></td>'+
       '</tr>';
-  }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--sl)">No suppliers yet. They auto-save when you create a PO.</td></tr>';
+  }).join('')||'<tr><td colspan="11" style="text-align:center;color:var(--sl)">No suppliers yet. They auto-save when you create a PO.</td></tr>';
+}
+function viewSupLedger(name){
+  go('suppayments');
+  setTimeout(()=>{
+    const tabs=document.querySelectorAll('#page-suppayments .tab');
+    tabs.forEach(t=>t.classList.remove('active'));tabs[2].classList.add('active');
+    document.getElementById('sup-advances-view').style.display='none';
+    document.getElementById('sup-payments-view').style.display='none';
+    document.getElementById('sup-ledger-view').style.display='';
+    const sel=document.getElementById('sup-ledger-select');
+    sel.innerHTML='<option value="">— Select Supplier —</option>'+(S.suppliers||[]).map(s=>'<option value="'+esc(s.name)+'"'+(s.name===name?' selected':'')+'>'+esc(s.name)+'</option>').join('');
+    renderSupLedger(name);
+  },100);
 }
 function openSupM(id){
   S.eSupId=id||null;
@@ -4466,6 +4614,597 @@ function seedProducts(){
   const seed=[['DI Pipe Socket & Spigot K7 (IS 8329)','7303','Mtr',850,18],['DI Pipe Socket & Spigot K9 (IS 8329)','7303','Mtr',1050,18],['DI Pipe Double Flanged K7 (IS 8329)','7303','Mtr',1100,18],['DI Pipe Double Flanged K9 (IS 8329)','7303','Mtr',1300,18],['DI Fittings Push on Joint (IS 9523)','7307','Nos',2500,18],['DI Fittings Flanged/Mech Joint (IS 9523)','7307','Nos',3200,18],['HDPE Pipe (IS 4984)','3917','Mtr',320,18],['HDPE Electrofusion Fittings','3917','Nos',850,18],['HDPE Butt Weld Fittings','3917','Nos',1200,18],['Sluice Valve CI (IS 14846)','8481','Nos',8500,18],['Butterfly Valve (IS 13095)','8481','Nos',6500,18],['Non Return Valve (IS 14845)','8481','Nos',7200,18],['Air Valve – Double Action','8481','Nos',4500,18],['Dual Plate Check Valve (API 594)','8481','Nos',9800,18]];
   S.products=seed.map(([n,h,u,r,g])=>({id:uid(),name:n,hsn:h,unit:u,rate:r,gst:g}));
   persist();
+}
+
+// ── SUPPLIER ADVANCES & PAYMENTS ──
+function setSupPayTab(tab,el){
+  document.querySelectorAll('#page-suppayments .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('sup-advances-view').style.display=tab==='advances'?'':'none';
+  document.getElementById('sup-payments-view').style.display=tab==='payments'?'':'none';
+  document.getElementById('sup-ledger-view').style.display=tab==='ledger'?'':'none';
+  if(tab==='ledger'){
+    const sel=document.getElementById('sup-ledger-select');
+    sel.innerHTML='<option value="">— Select Supplier —</option>'+(S.suppliers||[]).map(s=>'<option value="'+esc(s.name)+'">'+esc(s.name)+'</option>').join('');
+  }
+}
+function renderSupPayPages(){
+  renderSupAdvTbl();renderSupPayTbl();
+}
+function renderSupAdvTbl(){
+  const tb=document.getElementById('sup-adv-tb');if(!tb)return;
+  tb.innerHTML=(S.supAdvances||[]).length?[...(S.supAdvances||[])].reverse().map(a=>
+    '<tr><td style="font-weight:700;color:var(--am)">'+esc(a.ref)+'</td><td>'+esc(a.sup)+'</td><td>'+esc(a.poNo||'—')+'</td><td>'+DF(a.date)+'</td><td style="font-weight:700">'+F(a.amt)+'</td><td>'+esc(a.mode)+'</td><td style="font-size:11px">'+esc(a.ref2||'—')+'</td><td style="font-size:11px">'+esc(a.note||'—')+'</td>'+
+    '<td><button class="btn bg bsm" onclick="openSupAdvM(\''+a.id+'\')">✏️</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delSupAdv(\''+a.id+'\')">🗑</button></td></tr>'
+  ).join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">🏦</div><p>No supplier advances yet.</p></div></td></tr>';
+}
+function renderSupPayTbl(){
+  const tb=document.getElementById('sup-pay-tb');if(!tb)return;
+  tb.innerHTML=(S.supPayments||[]).length?[...(S.supPayments||[])].reverse().map(p=>
+    '<tr><td style="font-weight:700;color:var(--gn)">'+esc(p.ref)+'</td><td>'+esc(p.sup)+'</td><td>'+esc(p.poNo||'—')+'</td><td>'+DF(p.date)+'</td><td style="font-weight:700">'+F(p.amt)+'</td><td>'+esc(p.mode)+'</td><td style="font-size:11px">'+esc(p.ref2||'—')+'</td><td style="font-size:11px">'+esc(p.note||'—')+'</td>'+
+    '<td><button class="btn bg bsm" onclick="openSupPayM(\''+p.id+'\')">✏️</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delSupPay(\''+p.id+'\')">🗑</button></td></tr>'
+  ).join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">💸</div><p>No supplier payments yet.</p></div></td></tr>';
+}
+function populatePOsForSup(poSelId,supSelId){
+  const supName=document.getElementById(supSelId).value;
+  const poSel=document.getElementById(poSelId);
+  const pos=(S.purchaseOrders||[]).filter(po=>po.supName===supName);
+  poSel.innerHTML='<option value="">— Select PO (optional) —</option>'+pos.map(po=>'<option value="'+esc(po.poNo)+'">'+esc(po.poNo)+'</option>').join('');
+}
+function refreshSupDropdowns(supSelId){
+  const sel=document.getElementById(supSelId);
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Select Supplier —</option>'+(S.suppliers||[]).map(s=>'<option value="'+esc(s.name)+'"'+(s.name===cur?' selected':'')+'>'+esc(s.name)+'</option>').join('');
+}
+function openSupAdvM(id){
+  S.eSupAdvId=id||null;
+  const a=id?(S.supAdvances||[]).find(x=>x.id===id):null;
+  document.getElementById('sup-adv-mt').textContent=a?'Edit Supplier Advance':'Record Supplier Advance';
+  document.getElementById('sa-ref').value=a?a.ref:'SUP-ADV-'+String(S.nextSupAdv||1).padStart(4,'0');
+  document.getElementById('sa-date').value=a?a.date:new Date().toISOString().slice(0,10);
+  refreshSupDropdowns('sa-sup');
+  document.getElementById('sa-sup').value=a?a.sup:'';
+  if(a&&a.sup)populatePOsForSup('sa-po','sa-sup');
+  setTimeout(()=>{document.getElementById('sa-po').value=a?a.poNo:'';},50);
+  document.getElementById('sa-amt').value=a?a.amt:'';
+  document.getElementById('sa-mode').value=a?a.mode:'RTGS';
+  document.getElementById('sa-ref2').value=a?a.ref2||'':'';
+  document.getElementById('sa-note').value=a?a.note||'':'';
+  openM('sup-adv-modal');
+}
+function saveSupAdv(){
+  const d={
+    ref:document.getElementById('sa-ref').value.trim(),
+    date:document.getElementById('sa-date').value,
+    sup:document.getElementById('sa-sup').value,
+    poNo:document.getElementById('sa-po').value,
+    amt:V(document.getElementById('sa-amt').value),
+    mode:document.getElementById('sa-mode').value,
+    ref2:document.getElementById('sa-ref2').value.trim(),
+    note:document.getElementById('sa-note').value.trim()
+  };
+  if(!d.sup){toast('⚠ Select a supplier');return;}
+  if(!d.amt){toast('⚠ Enter amount');return;}
+  S.supAdvances=S.supAdvances||[];
+  if(S.eSupAdvId){const idx=S.supAdvances.findIndex(x=>x.id===S.eSupAdvId);S.supAdvances[idx]={...S.supAdvances[idx],...d};}
+  else{S.supAdvances.push({id:uid(),...d});S.nextSupAdv=(S.nextSupAdv||1)+1;}
+  persist();renderSupAdvTbl();closeM('sup-adv-modal');toast('✓ Supplier advance saved');
+}
+function delSupAdv(id){if(!confirm('Delete this supplier advance?'))return;S.supAdvances=(S.supAdvances||[]).filter(x=>x.id!==id);persist();renderSupAdvTbl();toast('Deleted');}
+
+function openSupPayM(id){
+  S.eSupPayId=id||null;
+  const p=id?(S.supPayments||[]).find(x=>x.id===id):null;
+  document.getElementById('sup-pay-mt').textContent=p?'Edit Supplier Payment':'Record Supplier Payment';
+  document.getElementById('sp-ref').value=p?p.ref:'SUP-PAY-'+String(S.nextSupPay||1).padStart(4,'0');
+  document.getElementById('sp-date').value=p?p.date:new Date().toISOString().slice(0,10);
+  refreshSupDropdowns('sp-sup');
+  document.getElementById('sp-sup').value=p?p.sup:'';
+  if(p&&p.sup)populatePOsForSup('sp-po','sp-sup');
+  setTimeout(()=>{document.getElementById('sp-po').value=p?p.poNo:'';},50);
+  document.getElementById('sp-amt').value=p?p.amt:'';
+  document.getElementById('sp-mode').value=p?p.mode:'RTGS';
+  document.getElementById('sp-ref2').value=p?p.ref2||'':'';
+  document.getElementById('sp-note').value=p?p.note||'':'';
+  openM('sup-pay-modal');
+}
+function saveSupPay(){
+  const d={
+    ref:document.getElementById('sp-ref').value.trim(),
+    date:document.getElementById('sp-date').value,
+    sup:document.getElementById('sp-sup').value,
+    poNo:document.getElementById('sp-po').value,
+    amt:V(document.getElementById('sp-amt').value),
+    mode:document.getElementById('sp-mode').value,
+    ref2:document.getElementById('sp-ref2').value.trim(),
+    note:document.getElementById('sp-note').value.trim()
+  };
+  if(!d.sup){toast('⚠ Select a supplier');return;}
+  if(!d.amt){toast('⚠ Enter amount');return;}
+  S.supPayments=S.supPayments||[];
+  if(S.eSupPayId){const idx=S.supPayments.findIndex(x=>x.id===S.eSupPayId);S.supPayments[idx]={...S.supPayments[idx],...d};}
+  else{S.supPayments.push({id:uid(),...d});S.nextSupPay=(S.nextSupPay||1)+1;}
+  persist();renderSupPayTbl();closeM('sup-pay-modal');toast('✓ Supplier payment saved');
+}
+function delSupPay(id){if(!confirm('Delete this supplier payment?'))return;S.supPayments=(S.supPayments||[]).filter(x=>x.id!==id);persist();renderSupPayTbl();toast('Deleted');}
+
+function renderSupLedger(supName){
+  const body=document.getElementById('sup-ledger-body');if(!body)return;
+  if(!supName){body.innerHTML='<div class="empty"><div class="ei">🏭</div><p>Select a supplier above</p></div>';return;}
+  const pos=(S.purchaseOrders||[]).filter(po=>po.supName===supName);
+  const advs=(S.supAdvances||[]).filter(a=>a.sup===supName);
+  const pays=(S.supPayments||[]).filter(p=>p.sup===supName);
+  const totPO=pos.reduce((s,po)=>s+V(po.total),0);
+  const totAdv=advs.reduce((s,a)=>s+V(a.amt),0);
+  const totPay=pays.reduce((s,p)=>s+V(p.amt),0);
+  const balance=totPO-totAdv-totPay;
+  body.innerHTML=`
+    <div class="sg4" style="margin-bottom:14px">
+      <div class="sc"><div class="sc-l">Total PO Value</div><div class="sc-v">${F(totPO)}</div><div class="sc-s">${pos.length} POs</div></div>
+      <div class="sc aacc"><div class="sc-l">Advances Paid</div><div class="sc-v">${F(totAdv)}</div><div class="sc-s">${advs.length} entries</div></div>
+      <div class="sc gacc"><div class="sc-l">Payments Made</div><div class="sc-v">${F(totPay)}</div><div class="sc-s">${pays.length} entries</div></div>
+      <div class="sc ${balance>0?'acc':''}"><div class="sc-l">Balance Payable</div><div class="sc-v">${F(balance)}</div><div class="sc-s">${balance>0?'Outstanding':'Cleared'}</div></div>
+    </div>
+    <h4 style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--sl)">PURCHASE ORDERS</h4>
+    <div class="tw" style="margin-bottom:14px"><table><thead><tr><th>PO No.</th><th>Date</th><th>Total</th><th>Adv Paid</th><th>Payments</th><th>Balance</th></tr></thead><tbody>
+    ${pos.length?pos.map(po=>{
+      const a=(S.supAdvances||[]).filter(x=>x.poNo===po.poNo).reduce((s,x)=>s+V(x.amt),0);
+      const p=(S.supPayments||[]).filter(x=>x.poNo===po.poNo).reduce((s,x)=>s+V(x.amt),0);
+      const bal=V(po.total)-a-p;
+      return '<tr><td style="font-weight:700;color:var(--rust)">'+esc(po.poNo)+'</td><td>'+DF(po.date)+'</td><td>'+F(po.total)+'</td><td style="color:var(--am)">'+F(a)+'</td><td style="color:var(--gn)">'+F(p)+'</td><td style="font-weight:700;color:'+(bal>0?'var(--rd)':'var(--gn)')+'">'+F(bal)+'</td></tr>';
+    }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--sl)">No POs</td></tr>'}
+    </tbody></table></div>
+    <h4 style="font-size:12px;font-weight:700;margin-bottom:8px;color:var(--sl)">ADVANCES & PAYMENTS</h4>
+    <div class="tw"><table><thead><tr><th>Type</th><th>Ref</th><th>PO No.</th><th>Date</th><th>Amount</th><th>Mode</th><th>Note</th></tr></thead><tbody>
+    ${[...advs.map(a=>({...a,type:'Advance'})),...pays.map(p=>({...p,type:'Payment'}))]
+      .sort((a,b)=>new Date(b.date)-new Date(a.date))
+      .map(x=>'<tr><td><span class="badge '+(x.type==='Advance'?'bpartial':'bpaid')+'">'+x.type+'</span></td><td style="font-weight:600">'+esc(x.ref)+'</td><td>'+esc(x.poNo||'—')+'</td><td>'+DF(x.date)+'</td><td style="font-weight:700">'+F(x.amt)+'</td><td>'+esc(x.mode)+'</td><td style="font-size:11px">'+esc(x.note||'—')+'</td></tr>').join('')||'<tr><td colspan="7" style="text-align:center;color:var(--sl)">No transactions</td></tr>'}
+    </tbody></table></div>`;
+}
+
+// ── DOCUMENT LINKAGE ──
+// ── TRANSACTION BUNDLES (Linkage) ──
+function setLinkTab(tab,el){
+  document.querySelectorAll('#page-linkage .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  ['bundles','create','detail'].forEach(t=>{
+    const v=document.getElementById('link-'+t+'-view');if(v)v.style.display=t===tab?'':'none';
+  });
+  if(tab==='bundles')renderBundleList();
+  if(tab==='create')initBundleForm();
+}
+function setLinkTabByName(tab){
+  const tabs=document.querySelectorAll('#page-linkage .tab');
+  const map={bundles:0,create:1};
+  setLinkTab(tab, tabs[map[tab]||0]);
+}
+function renderLinkagePages(){renderBundleList();}
+
+/* ---------- bundle list ---------- */
+function renderBundleList(){
+  const body=document.getElementById('lnk-bundle-list');if(!body)return;
+  const bundles=S.linkages||[];
+  if(!bundles.length){
+    body.innerHTML='<div class="empty"><div class="ei">🔗</div><p>No bundles yet. Click <strong>＋ New Bundle</strong> to link an Offer, PO and Invoice together.</p></div>';
+    return;
+  }
+  // summary stats
+  const totalOffer=bundles.reduce((s,b)=>{const o=(S.offers||[]).find(x=>x.id===b.offerId);return s+(o?V(o.grandTotal||o.total||0):0);},0);
+  const totalPO=bundles.reduce((s,b)=>s+(b.poIds||[]).reduce((t,pid)=>{const p=(S.purchaseOrders||[]).find(x=>x.id===pid);return t+V(p?p.total:0);},0),0);
+  const totalInv=bundles.reduce((s,b)=>s+(b.invIds||[]).reduce((t,iid)=>{const i=(S.invoices||[]).find(x=>x.id===iid);return t+V(i?i.total||i.grandTotal||i.amount:0);},0),0);
+  body.innerHTML=`<div class="sg3" style="margin-bottom:16px">
+    <div class="sc gacc"><div class="sc-l">Total Offer Value</div><div class="sc-v">${F(totalOffer)}</div><div class="sc-s">${bundles.length} bundles</div></div>
+    <div class="sc acc"><div class="sc-l">Total PO Value</div><div class="sc-v">${F(totalPO)}</div><div class="sc-s">across all bundles</div></div>
+    <div class="sc"><div class="sc-l">Total Invoiced</div><div class="sc-v">${F(totalInv)}</div><div class="sc-s">across all bundles</div></div>
+  </div>`+
+  bundles.slice().reverse().map(b=>bundleCard(b)).join('');
+}
+
+function bundleCard(b){
+  const offer=(S.offers||[]).find(x=>x.id===b.offerId);
+  const pos=(b.poIds||[]).map(pid=>(S.purchaseOrders||[]).find(x=>x.id===pid)).filter(Boolean);
+  const invs=(b.invIds||[]).map(iid=>(S.invoices||[]).find(x=>x.id===iid)).filter(Boolean);
+  const offerVal=offer?V(offer.grandTotal||offer.total||offer.grand||0):0;
+  const poVal=pos.reduce((s,p)=>s+V(p.total),0);
+  const invVal=invs.reduce((s,i)=>s+V(i.grand),0);
+  const supAdvs=(b.poIds||[]).reduce((s,pid)=>{
+    const po=(S.purchaseOrders||[]).find(x=>x.id===pid);
+    return s+(po?(S.supAdvances||[]).filter(a=>a.poNo===po.poNo).reduce((t,a)=>t+V(a.amt),0):0);
+  },0);
+  const supPays=(b.poIds||[]).reduce((s,pid)=>{
+    const po=(S.purchaseOrders||[]).find(x=>x.id===pid);
+    return s+(po?(S.supPayments||[]).filter(p=>p.poNo===po.poNo).reduce((t,p)=>t+V(p.amt),0):0);
+  },0);
+  const supBal=poVal-supAdvs-supPays;
+  const custReceived=invs.reduce((s,i)=>s+invAdv(i.number)+invPaid(i.number),0);
+  const custBal=invVal-custReceived;
+  return `<div class="card" style="margin-bottom:12px;border-left:3px solid var(--bp)">
+    <div class="ch" style="padding:12px 14px">
+      <div>
+        <div style="font-weight:700;font-size:14px">${esc(b.name)}</div>
+        <div style="font-size:11px;color:var(--sl);margin-top:2px">${DF(b.date)}${b.note?' · '+esc(b.note):''}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bg bsm" onclick="openBundleDetail('${b.id}')">📊 Report</button>
+        <button class="btn bg bsm" onclick="editBundle('${b.id}')">✏️</button>
+        <button class="btn bg bsm" style="color:var(--rd)" onclick="delBundle('${b.id}')">🗑</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0;border-top:1px solid var(--br)">
+      <div style="padding:10px 14px;border-right:1px solid var(--br)">
+        <div style="font-size:10px;color:var(--sl);font-weight:700;letter-spacing:.05em">OFFER</div>
+        <div style="font-weight:700;font-size:13px;margin-top:2px">${offer?esc(offer.offerNo):'<span style="color:var(--sl)">None</span>'}</div>
+        ${offer?'<div style="font-size:11px;color:var(--sl)">'+esc(offer.custName)+'</div><div style="font-size:12px;font-weight:600;color:var(--gn);margin-top:2px">'+F(offerVal)+'</div>':''}
+      </div>
+      <div style="padding:10px 14px;border-right:1px solid var(--br)">
+        <div style="font-size:10px;color:var(--sl);font-weight:700;letter-spacing:.05em">PURCHASE ORDERS (${pos.length})</div>
+        ${pos.length?pos.map(p=>'<div style="font-size:12px;font-weight:600;margin-top:3px">'+esc(p.poNo)+' <span style="color:var(--sl);font-weight:400">'+esc(p.supName)+'</span> <span style="float:right">'+F(p.total)+'</span></div>').join(''):'<div style="color:var(--sl);font-size:11px;margin-top:4px">None linked</div>'}
+        ${pos.length?'<div style="font-size:11px;color:var(--rust);margin-top:4px">Total: '+F(poVal)+'</div>':''}
+      </div>
+      <div style="padding:10px 14px;border-right:1px solid var(--br)">
+        <div style="font-size:10px;color:var(--sl);font-weight:700;letter-spacing:.05em">INVOICES (${invs.length})</div>
+        ${invs.length?invs.map(i=>'<div style="font-size:12px;font-weight:600;margin-top:3px">'+esc(i.number)+' <span style="color:var(--sl);font-weight:400">'+esc(i.bname||'')+'</span> <span style="float:right">'+F(i.total||i.grandTotal||i.amount)+'</span></div>').join(''):'<div style="color:var(--sl);font-size:11px;margin-top:4px">None linked</div>'}
+        ${invs.length?'<div style="font-size:11px;color:var(--gn);margin-top:4px">Total: '+F(invVal)+'</div>':''}
+      </div>
+      <div style="padding:10px 14px">
+        <div style="font-size:10px;color:var(--sl);font-weight:700;letter-spacing:.05em">BALANCE SUMMARY</div>
+        <div style="font-size:11px;margin-top:4px">Supplier bal: <strong style="color:${supBal>0?'var(--rd)':'var(--gn)'}">${F(supBal)}</strong></div>
+        <div style="font-size:11px;margin-top:2px">Customer bal: <strong style="color:${custBal>0?'var(--am)':'var(--gn)'}">${F(custBal)}</strong></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------- create / edit form ---------- */
+function initBundleForm(bundleId){
+  S._editBundleId=bundleId||null;
+  const b=bundleId?(S.linkages||[]).find(x=>x.id===bundleId):null;
+  document.getElementById('lnk-create-title').textContent=b?'✏️ Edit Bundle':'➕ Create Transaction Bundle';
+  document.getElementById('lnk-bname').value=b?b.name:'';
+  document.getElementById('lnk-bnote').value=b?b.note||'':'';
+
+  // Offer dropdown
+  const offerSel=document.getElementById('lnk-b-offer');
+  offerSel.innerHTML='<option value="">— None —</option>'+(S.offers||[]).map(o=>'<option value="'+esc(o.id)+'"'+(b&&b.offerId===o.id?' selected':'')+'>'+esc(o.offerNo)+' – '+esc(o.custName)+'</option>').join('');
+
+  // PO checkboxes
+  const poList=document.getElementById('lnk-b-po-list');
+  const selPOs=new Set(b?b.poIds||[]:[]);
+  poList.innerHTML=(S.purchaseOrders||[]).length
+    ?'<div style="display:flex;flex-wrap:wrap;gap:8px;width:100%">'+(S.purchaseOrders||[]).map(po=>
+        `<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--br);border-radius:5px;background:${selPOs.has(po.id)?'var(--bp)':'var(--cc)'};color:${selPOs.has(po.id)?'#fff':'inherit'}">
+          <input type="checkbox" value="${esc(po.id)}" ${selPOs.has(po.id)?'checked':''} onchange="toggleBundleCheck(this,'po')" style="display:none">
+          📑 ${esc(po.poNo)} <span style="opacity:.7">${esc(po.supName)}</span> · ${F(po.total)}
+        </label>`
+      ).join('')+'</div>'
+    :'<span style="color:var(--sl);font-size:12px">No POs available</span>';
+
+  // Invoice checkboxes
+  const invList=document.getElementById('lnk-b-inv-list');
+  const selInvs=new Set(b?b.invIds||[]:[]);
+  invList.innerHTML=(S.invoices||[]).length
+    ?'<div style="display:flex;flex-wrap:wrap;gap:8px;width:100%">'+(S.invoices||[]).map(inv=>
+        `<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--br);border-radius:5px;background:${selInvs.has(inv.id)?'var(--bp)':'var(--cc)'};color:${selInvs.has(inv.id)?'#fff':'inherit'}">
+          <input type="checkbox" value="${esc(inv.id)}" ${selInvs.has(inv.id)?'checked':''} onchange="toggleBundleCheck(this,'inv')" style="display:none">
+          🧾 ${esc(inv.number)} <span style="opacity:.7">${esc(inv.bname||'')}</span> · ${F(inv.total||inv.grandTotal||inv.amount)}
+        </label>`
+      ).join('')+'</div>'
+    :'<span style="color:var(--sl);font-size:12px">No invoices available</span>';
+}
+function toggleBundleCheck(cb,type){
+  const lbl=cb.closest('label');
+  if(cb.checked){lbl.style.background='var(--bp)';lbl.style.color='#fff';}
+  else{lbl.style.background='var(--cc)';lbl.style.color='';}
+}
+function saveBundle(){
+  const name=document.getElementById('lnk-bname').value.trim();
+  if(!name){toast('⚠ Enter a bundle name');return;}
+  const offerId=document.getElementById('lnk-b-offer').value;
+  const poIds=[...document.querySelectorAll('#lnk-b-po-list input:checked')].map(c=>c.value);
+  const invIds=[...document.querySelectorAll('#lnk-b-inv-list input:checked')].map(c=>c.value);
+  const note=document.getElementById('lnk-bnote').value.trim();
+  const date=new Date().toISOString().slice(0,10);
+  S.linkages=S.linkages||[];
+  if(S._editBundleId){
+    const idx=S.linkages.findIndex(x=>x.id===S._editBundleId);
+    if(idx>-1)S.linkages[idx]={...S.linkages[idx],name,offerId,poIds,invIds,note};
+  } else {
+    S.linkages.push({id:uid(),name,offerId,poIds,invIds,note,date});
+  }
+  S._editBundleId=null;
+  persist();setLinkTabByName('bundles');toast('✓ Bundle saved');
+}
+function editBundle(id){
+  const tabs=document.querySelectorAll('#page-linkage .tab');
+  tabs.forEach(t=>t.classList.remove('active'));tabs[1].classList.add('active');
+  ['bundles','create','detail'].forEach(t=>{const v=document.getElementById('link-'+t+'-view');if(v)v.style.display=t==='create'?'':'none';});
+  initBundleForm(id);
+}
+function delBundle(id){if(!confirm('Delete this bundle?'))return;S.linkages=(S.linkages||[]).filter(x=>x.id!==id);persist();renderBundleList();toast('Bundle deleted');}
+
+/* ---------- bundle detail / report ---------- */
+function openBundleDetail(id){
+  const tabs=document.querySelectorAll('#page-linkage .tab');
+  tabs.forEach(t=>t.classList.remove('active'));
+  ['bundles','create','detail'].forEach(t=>{const v=document.getElementById('link-'+t+'-view');if(v)v.style.display=t==='detail'?'':'none';});
+  renderBundleDetail(id);
+}
+function renderBundleDetail(id){
+  const body=document.getElementById('lnk-detail-body');if(!body)return;
+  const b=(S.linkages||[]).find(x=>x.id===id);
+  if(!b){body.innerHTML='<div class="empty"><p>Bundle not found.</p></div>';return;}
+  const offer=(S.offers||[]).find(x=>x.id===b.offerId);
+  const pos=(b.poIds||[]).map(pid=>(S.purchaseOrders||[]).find(x=>x.id===pid)).filter(Boolean);
+  const invs=(b.invIds||[]).map(iid=>(S.invoices||[]).find(x=>x.id===iid)).filter(Boolean);
+
+  // Invoice financials — use correct fields
+  const invVal=invs.reduce((s,i)=>s+V(i.grand),0);
+  const invAdvsTotal=invs.reduce((s,i)=>s+invAdv(i.number),0);
+  const invPaidsTotal=invs.reduce((s,i)=>s+invPaid(i.number),0);
+  const totCustReceived=invAdvsTotal+invPaidsTotal;
+  const totCustBal=invVal-totCustReceived;
+
+  // Offer value
+  const offerVal=offer?V(offer.grandTotal||offer.total||offer.grand||0):0;
+
+  // PO financials
+  const poVal=pos.reduce((s,p)=>s+V(p.total),0);
+  const supRows=pos.map(p=>{
+    const advs=(S.supAdvances||[]).filter(a=>a.poNo===p.poNo);
+    const pays=(S.supPayments||[]).filter(x=>x.poNo===p.poNo);
+    const adv=advs.reduce((s,a)=>s+V(a.amt),0);
+    const pay=pays.reduce((s,x)=>s+V(x.amt),0);
+    return {po:p,adv,pay,bal:V(p.total)-adv-pay,advRows:advs,payRows:pays};
+  });
+  const totSupAdv=supRows.reduce((s,r)=>s+r.adv,0);
+  const totSupPay=supRows.reduce((s,r)=>s+r.pay,0);
+  const totSupPaid=totSupAdv+totSupPay;
+  const totSupBal=poVal-totSupPaid;
+
+  // P&L
+  const margin=offerVal-poVal;
+  const marginPct=offerVal?((margin/offerVal)*100).toFixed(1):0;
+  const collectionPct=invVal?((totCustReceived/invVal)*100).toFixed(1):0;
+  const supPayPct=poVal?((totSupPaid/poVal)*100).toFixed(1):0;
+
+  // Invoice rows with correct paid status
+  const custRows=invs.map(i=>{
+    const adv=invAdv(i.number);
+    const paid=invPaid(i.number);
+    const received=adv+paid;
+    const bal=Math.max(0,V(i.grand)-received);
+    return {inv:i,val:V(i.grand),adv,paid,received,bal};
+  });
+
+  body.innerHTML=`
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+    <button class="btn bg bsm" onclick="setLinkTabByName('bundles')" style="font-size:18px;padding:4px 10px">←</button>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:17px;font-weight:700">${esc(b.name)}</div>
+      <div style="font-size:11px;color:var(--sl)">${DF(b.date)}${b.note?' · <em>'+esc(b.note)+'</em>':''}</div>
+    </div>
+    <button class="btn bg bsm" onclick="editBundle('${b.id}')">✏️ Edit Bundle</button>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px">
+    <div class="sc gacc" style="text-align:center">
+      <div class="sc-l">Offer Value</div>
+      <div class="sc-v">${F(offerVal)}</div>
+      <div class="sc-s">${offer?esc(offer.offerNo):'No offer linked'}</div>
+    </div>
+    <div class="sc acc" style="text-align:center">
+      <div class="sc-l">Total PO Cost</div>
+      <div class="sc-v">${F(poVal)}</div>
+      <div class="sc-s">${pos.length} PO${pos.length!==1?'s':''}</div>
+    </div>
+    <div class="sc" style="text-align:center">
+      <div class="sc-l">Total Invoiced</div>
+      <div class="sc-v">${F(invVal)}</div>
+      <div class="sc-s">${invs.length} Invoice${invs.length!==1?'s':''}</div>
+    </div>
+    <div class="sc ${margin>=0?'gacc':'acc'}" style="text-align:center">
+      <div class="sc-l">Gross Margin</div>
+      <div class="sc-v">${F(margin)}</div>
+      <div class="sc-s">${marginPct}% on offer</div>
+    </div>
+    <div class="sc ${totCustBal>0?'aacc':''}" style="text-align:center">
+      <div class="sc-l">Customer Outstanding</div>
+      <div class="sc-v">${F(totCustBal)}</div>
+      <div class="sc-s">${collectionPct}% collected</div>
+    </div>
+    <div class="sc ${totSupBal>0?'acc':''}" style="text-align:center">
+      <div class="sc-l">Supplier Balance</div>
+      <div class="sc-v">${F(totSupBal)}</div>
+      <div class="sc-s">${supPayPct}% paid</div>
+    </div>
+  </div>
+
+  <!-- PROGRESS BARS -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="ch" style="padding:10px 14px"><h3 style="font-size:13px">📊 Collection & Payment Progress</h3></div>
+    <div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+          <span style="font-weight:600">Customer Collections</span>
+          <span style="color:var(--gn);font-weight:700">${F(totCustReceived)} / ${F(invVal)}</span>
+        </div>
+        <div style="background:var(--br);border-radius:99px;height:10px;overflow:hidden">
+          <div style="background:var(--gn);height:100%;width:${Math.min(100,parseFloat(collectionPct))}%;border-radius:99px;transition:width .4s"></div>
+        </div>
+        <div style="font-size:11px;color:var(--sl);margin-top:4px">${collectionPct}% received · ${F(totCustBal)} outstanding</div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+          <span style="font-weight:600">Supplier Payments</span>
+          <span style="color:var(--rust);font-weight:700">${F(totSupPaid)} / ${F(poVal)}</span>
+        </div>
+        <div style="background:var(--br);border-radius:99px;height:10px;overflow:hidden">
+          <div style="background:var(--rust);height:100%;width:${Math.min(100,parseFloat(supPayPct))}%;border-radius:99px;transition:width .4s"></div>
+        </div>
+        <div style="font-size:11px;color:var(--sl);margin-top:4px">${supPayPct}% paid · ${F(totSupBal)} remaining</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OFFER -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="ch" style="padding:10px 14px"><h3 style="font-size:13px">📨 Offer / Quotation</h3></div>
+    ${offer?`<div style="padding:12px 16px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">
+        <div><div style="font-size:10px;color:var(--sl);font-weight:700">OFFER NO.</div><div style="font-weight:700;font-size:14px;color:var(--rust)">${esc(offer.offerNo)}</div></div>
+        <div><div style="font-size:10px;color:var(--sl);font-weight:700">CUSTOMER</div><div style="font-weight:600;font-size:13px">${esc(offer.custName)}</div></div>
+        <div><div style="font-size:10px;color:var(--sl);font-weight:700">DATE</div><div style="font-size:13px">${DF(offer.date)}</div></div>
+        <div><div style="font-size:10px;color:var(--sl);font-weight:700">OFFER VALUE</div><div style="font-weight:700;font-size:14px;color:var(--gn)">${F(offerVal)}</div></div>
+        ${offer.status?'<div><div style="font-size:10px;color:var(--sl);font-weight:700">STATUS</div><div><span class="badge b'+offer.status+'">'+esc(offer.status)+'</span></div></div>':''}
+      </div>
+      ${(offer.items||[]).length?`<div class="tw"><table><thead><tr><th>#</th><th>Item / Description</th><th>Qty</th><th>Unit</th><th>Rate</th><th>Amount</th></tr></thead><tbody>
+        ${(offer.items||[]).map((it,idx)=>'<tr><td style="color:var(--sl)">'+(idx+1)+'</td><td style="font-weight:600">'+esc(it.name||it.desc||it.item||'')+'</td><td>'+esc(it.qty)+'</td><td>'+esc(it.unit||'—')+'</td><td>'+F(it.rate||it.price||it.unitPrice)+'</td><td style="font-weight:700">'+F(it.total||it.amount||((it.qty||0)*(it.rate||it.price||0)))+'</td></tr>').join('')}
+        <tr style="border-top:2px solid var(--br);font-weight:700"><td colspan="5" style="text-align:right;font-size:12px;color:var(--sl)">OFFER TOTAL</td><td style="color:var(--gn);font-size:14px">${F(offerVal)}</td></tr>
+      </tbody></table></div>`:'<div style="color:var(--sl);font-size:12px;padding:4px 0">No line items recorded.</div>'}
+    </div>`:'<div style="padding:12px 16px;color:var(--sl);font-size:12px">No offer linked to this bundle.</div>'}
+  </div>
+
+  <!-- PURCHASE ORDERS -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="ch" style="padding:10px 14px">
+      <h3 style="font-size:13px">📑 Purchase Orders & Supplier Payments</h3>
+      <div style="font-size:12px;color:var(--sl)">${pos.length} PO${pos.length!==1?'s':''} · Total: ${F(poVal)} · Paid: ${F(totSupPaid)} · Bal: <strong style="color:${totSupBal>0?'var(--rd)':'var(--gn)'}">${F(totSupBal)}</strong></div>
+    </div>
+    <div style="padding:12px 16px">
+      ${pos.length?`
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">
+        <div class="sc acc"><div class="sc-l">Total PO Value</div><div class="sc-v">${F(poVal)}</div></div>
+        <div class="sc aacc"><div class="sc-l">Advances Paid</div><div class="sc-v">${F(totSupAdv)}</div></div>
+        <div class="sc gacc"><div class="sc-l">Payments Made</div><div class="sc-v">${F(totSupPay)}</div></div>
+        <div class="sc ${totSupBal>0?'acc':''}"><div class="sc-l">Balance Due</div><div class="sc-v">${F(totSupBal)}</div></div>
+      </div>
+      ${supRows.map((r,idx)=>`
+        <div style="border:1px solid var(--br);border-radius:8px;margin-bottom:12px;overflow:hidden">
+          <div style="background:var(--bg);padding:9px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--br);flex-wrap:wrap;gap:8px">
+            <div>
+              <span style="font-weight:700;color:var(--rust)">${esc(r.po.poNo)}</span>
+              <span style="color:var(--sl);font-size:12px;margin-left:8px">Supplier: <strong>${esc(r.po.supName)}</strong></span>
+              ${r.po.date?'<span style="color:var(--sl);font-size:11px;margin-left:8px">'+DF(r.po.date)+'</span>':''}
+            </div>
+            <div style="display:flex;gap:16px;font-size:12px">
+              <span>PO Value: <strong>${F(r.po.total)}</strong></span>
+              <span style="color:var(--am)">Adv: <strong>${F(r.adv)}</strong></span>
+              <span style="color:var(--gn)">Paid: <strong>${F(r.pay)}</strong></span>
+              <span style="color:${r.bal>0?'var(--rd)':'var(--gn)'};font-weight:700">Bal: ${F(r.bal)}</span>
+            </div>
+          </div>
+          <!-- PO progress bar -->
+          <div style="padding:8px 14px;border-bottom:1px solid var(--br)">
+            <div style="background:var(--br);border-radius:99px;height:6px;overflow:hidden">
+              <div style="background:var(--gn);height:100%;width:${Math.min(100,r.po.total?((r.adv+r.pay)/V(r.po.total)*100):0).toFixed(1)}%;border-radius:99px"></div>
+            </div>
+          </div>
+          ${r.advRows.length||r.payRows.length?`<div class="tw" style="margin:0"><table><thead><tr><th>Type</th><th>Ref</th><th>Date</th><th>Amount</th><th>Mode</th><th>Bank Ref/UTR</th><th>Note</th></tr></thead><tbody>
+            ${[...r.advRows.map(a=>({...a,type:'Advance'})),...r.payRows.map(p=>({...p,type:'Payment'}))]
+              .sort((a,b)=>new Date(a.date)-new Date(b.date))
+              .map(x=>'<tr><td><span class="badge '+(x.type==='Advance'?'bpartial':'bpaid')+'">'+x.type+'</span></td><td style="font-weight:600">'+esc(x.ref)+'</td><td>'+DF(x.date)+'</td><td style="font-weight:700">'+F(x.amt)+'</td><td>'+esc(x.mode)+'</td><td style="font-size:11px;color:var(--sl)">'+esc(x.ref2||'—')+'</td><td style="font-size:11px">'+esc(x.note||'—')+'</td></tr>').join('')}
+          </tbody></table></div>`:`<div style="padding:10px 14px;color:var(--sl);font-size:11px;font-style:italic">No supplier transactions recorded for this PO yet.</div>`}
+        </div>`).join('')}`
+      :'<div style="color:var(--sl);font-size:12px">No POs linked to this bundle.</div>'}
+    </div>
+  </div>
+
+  <!-- INVOICES -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="ch" style="padding:10px 14px">
+      <h3 style="font-size:13px">🧾 Invoices & Customer Receipts</h3>
+      <div style="font-size:12px;color:var(--sl)">${invs.length} Invoice${invs.length!==1?'s':''} · Total: ${F(invVal)} · Received: ${F(totCustReceived)} · Bal: <strong style="color:${totCustBal>0?'var(--am)':'var(--gn)'}">${F(totCustBal)}</strong></div>
+    </div>
+    <div style="padding:12px 16px">
+      ${invs.length?`
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px">
+        <div class="sc gacc"><div class="sc-l">Total Invoiced</div><div class="sc-v">${F(invVal)}</div></div>
+        <div class="sc aacc"><div class="sc-l">Advances Received</div><div class="sc-v">${F(invAdvsTotal)}</div></div>
+        <div class="sc"><div class="sc-l">Payments Received</div><div class="sc-v">${F(invPaidsTotal)}</div></div>
+        <div class="sc ${totCustBal>0?'aacc':''}"><div class="sc-l">Outstanding</div><div class="sc-v">${F(totCustBal)}</div></div>
+      </div>
+      ${custRows.map(r=>{
+        const statusBadge=r.bal<=0?'bpaid':r.received>0?'bpartial':'bdue';
+        const statusLabel=r.bal<=0?'Paid':r.received>0?'Partial':'Unpaid';
+        const pct=r.val?(r.received/r.val*100).toFixed(1):0;
+        return `<div style="border:1px solid var(--br);border-radius:8px;margin-bottom:12px;overflow:hidden">
+          <div style="background:var(--bg);padding:9px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--br)">
+            <div>
+              <span style="font-weight:700;color:var(--rust)">${esc(r.inv.number)}</span>
+              <span style="color:var(--sl);font-size:12px;margin-left:8px">Customer: <strong>${esc(r.inv.bname||'')}</strong></span>
+              <span style="color:var(--sl);font-size:11px;margin-left:8px">${DF(r.inv.date)}</span>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;font-size:12px;flex-wrap:wrap">
+              <span>Value: <strong>${F(r.val)}</strong></span>
+              <span style="color:var(--am)">Adv: <strong>${F(r.adv)}</strong></span>
+              <span style="color:var(--gn)">Paid: <strong>${F(r.paid)}</strong></span>
+              <span style="color:${r.bal>0?'var(--rd)':'var(--gn)'};font-weight:700">Bal: ${F(r.bal)}</span>
+              <span class="badge ${statusBadge}">${statusLabel}</span>
+            </div>
+          </div>
+          <div style="padding:8px 14px;border-bottom:1px solid var(--br)">
+            <div style="background:var(--br);border-radius:99px;height:6px;overflow:hidden">
+              <div style="background:var(--gn);height:100%;width:${Math.min(100,parseFloat(pct))}%;border-radius:99px"></div>
+            </div>
+            <div style="font-size:10px;color:var(--sl);margin-top:3px">${pct}% collected</div>
+          </div>
+          ${(()=>{
+            const advRows=S.advances.filter(a=>a.invNum===r.inv.number);
+            const payRows=S.payments.filter(p=>p.invNum===r.inv.number);
+            return advRows.length||payRows.length?`<div class="tw" style="margin:0"><table><thead><tr><th>Type</th><th>Ref/Note</th><th>Date</th><th>Amount</th><th>Mode</th></tr></thead><tbody>
+              ${[...advRows.map(a=>({...a,type:'Advance'})),...payRows.map(p=>({...p,type:'Payment'}))]
+                .sort((a,b)=>new Date(a.date)-new Date(b.date))
+                .map(x=>'<tr><td><span class="badge '+(x.type==='Advance'?'bpartial':'bpaid')+'">'+x.type+'</span></td><td style="font-size:12px">'+esc(x.note||x.ref||'—')+'</td><td>'+DF(x.date)+'</td><td style="font-weight:700">'+F(x.amt)+'</td><td>'+esc(x.mode||'—')+'</td></tr>').join('')}
+            </tbody></table></div>`:`<div style="padding:10px 14px;color:var(--sl);font-size:11px;font-style:italic">No receipts recorded for this invoice yet.</div>`;
+          })()}
+        </div>`;
+      }).join('')}`
+      :'<div style="color:var(--sl);font-size:12px">No invoices linked to this bundle.</div>'}
+    </div>
+  </div>
+
+  <!-- P&L SNAPSHOT -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="ch" style="padding:10px 14px"><h3 style="font-size:13px">💹 P&L Snapshot</h3></div>
+    <div style="padding:12px 16px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;max-width:520px">
+        <tr style="border-bottom:1px solid var(--br)">
+          <td style="padding:8px 4px;color:var(--sl)">📨 Offer / Quoted Revenue</td>
+          <td style="padding:8px 4px;text-align:right;font-weight:700;color:var(--gn)">${F(offerVal)}</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--br)">
+          <td style="padding:8px 4px;color:var(--sl)">📑 Total PO Cost</td>
+          <td style="padding:8px 4px;text-align:right;font-weight:700;color:var(--rd)">− ${F(poVal)}</td>
+        </tr>
+        <tr style="border-bottom:2px solid var(--br);background:var(--bg)">
+          <td style="padding:8px 4px;font-weight:700">Gross Margin</td>
+          <td style="padding:8px 4px;text-align:right;font-weight:700;font-size:15px;color:${margin>=0?'var(--gn)':'var(--rd)'}">${F(margin)} <span style="font-size:11px;opacity:.7">(${marginPct}%)</span></td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--br)">
+          <td style="padding:8px 4px;color:var(--sl)">🧾 Total Invoiced to Customer</td>
+          <td style="padding:8px 4px;text-align:right">${F(invVal)}</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--br)">
+          <td style="padding:8px 4px;color:var(--sl)">✅ Received from Customer</td>
+          <td style="padding:8px 4px;text-align:right;color:var(--gn)">${F(totCustReceived)}</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--br)">
+          <td style="padding:8px 4px;color:var(--sl)">⏳ Customer Outstanding</td>
+          <td style="padding:8px 4px;text-align:right;color:${totCustBal>0?'var(--am)':'var(--gn)'};font-weight:700">${F(totCustBal)}</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--br)">
+          <td style="padding:8px 4px;color:var(--sl)">💸 Supplier Paid So Far</td>
+          <td style="padding:8px 4px;text-align:right;color:var(--rd)">− ${F(totSupPaid)}</td>
+        </tr>
+        <tr style="background:var(--bg)">
+          <td style="padding:8px 4px;font-weight:700">Net Cash Position</td>
+          <td style="padding:8px 4px;text-align:right;font-weight:700;font-size:15px;color:${(totCustReceived-totSupPaid)>=0?'var(--gn)':'var(--rd)'}">${F(totCustReceived-totSupPaid)}</td>
+        </tr>
+      </table>
+    </div>
+  </div>`;
 }
 
 // ── BOOTSTRAP ──
