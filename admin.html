@@ -327,6 +327,7 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <div class="ni" onclick="go('offers')"><span class="ic">📨</span>Offers</div>
     <div class="ni" onclick="go('linkage')"><span class="ic">🔗</span>Linkage</div>
     <div class="ni" onclick="go('calldiary')"><span class="ic">📞</span>Call Diary</div>
+    <div class="ni" onclick="go('staff')"><span class="ic">🧑‍💼</span>Staff</div>
     <div class="ni" onclick="go('history')"><span class="ic">🕘</span>History</div>
     <div class="ni" onclick="go('settings')"><span class="ic">⚙️</span>Settings</div>
   </nav>
@@ -1460,6 +1461,8 @@ window.applyRoleUI=function(role){
   if(historyNav)historyNav.style.display=isStaff()?'none':'';
   const staffNav=document.querySelector('.ni[onclick="go(\'staff\')"]');
   if(staffNav)staffNav.style.display=isStaff()?'none':'';
+  const linkageNav=document.querySelector('.ni[onclick="go(\'linkage\')"]');
+  if(linkageNav)linkageNav.style.display=isStaff()?'none':'';
   const staffSection=document.getElementById('r-staff-section');
   if(staffSection)staffSection.style.display=isStaff()?'none':'';
   ['f-usestamp','po-usestamp','offer-usestamp'].forEach(lockStampCheckbox);
@@ -1612,8 +1615,8 @@ function custByAny(val){
 }
 
 // ── NAVIGATION ──
-const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','suppayments','linkage','offers','calldiary','history','settings'];
-const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',suppayments:'Supplier Payments',linkage:'Document Linkage',offers:'Offers',calldiary:'Call Diary',history:'Activity History',settings:'Settings'};
+const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','suppayments','linkage','offers','calldiary','staff','history','settings'];
+const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',suppayments:'Supplier Payments',linkage:'Document Linkage',offers:'Offers',calldiary:'Call Diary',staff:'Staff',history:'Activity History',settings:'Settings'};
 const TOP_BTN_MAP={
   dashboard:null, invoices:['＋ New Invoice','openNewInv'],
   advances:['＋ Record Advance','openAdvM'], payments:['＋ Record Payment','openPayM'],
@@ -1625,7 +1628,7 @@ const TOP_BTN_MAP={
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open');}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
 function go(p){
-  if((p==='settings'||p==='history'||p==='staff')&&isStaff()){toast('⚠ Restricted for your account');p='dashboard';}
+  if((p==='settings'||p==='history'||p==='linkage'||p==='staff')&&isStaff()){toast('⚠ Restricted for your account');p='dashboard';}
   closeSidebar();
   PAGES.forEach(x=>{const el=document.getElementById('page-'+x);if(el)el.classList.remove('active');});
   document.querySelectorAll('.ni').forEach(el=>el.classList.remove('active'));
@@ -1648,6 +1651,7 @@ function go(p){
   if(p==='reports')renderReports();
   if(p==='history')renderHistory();
   if(p==='calldiary')renderCallDiaryTbl();
+  if(p==='staff')renderEmpTbl();
   if(p==='suppayments')renderSupPayPages();
   if(p==='linkage')renderLinkagePages();
   renderAll();
@@ -1754,6 +1758,7 @@ function loadSett(){
 }
 function saveSett(){
   if(blockIfStaff('⚠ Settings are restricted for your account'))return;
+  
   const oldCfg={...S.cfg};
   SK.forEach(k=>{const el=document.getElementById('s-'+k);if(el)S.cfg[k]=el.value;});
   const g=document.getElementById('s-gsttype');if(g)S.cfg.gsttype=g.value;
@@ -1785,6 +1790,7 @@ function updSidebar(){document.getElementById('sb-n').textContent=(S.cfg.name||'
 // ── INVOICE FORM ──
 function openNewInv(){
   if(blockIfStaff('⚠ Creating invoices is restricted for your account'))return;
+  
   S.eInvId=null;
   document.getElementById('inv-mt').textContent='New Invoice';
   const y=new Date().getFullYear(),n=String(S.nextN).padStart(3,'0');
@@ -1810,6 +1816,7 @@ function openNewInv(){
 }
 function editInv(id){
   if(blockIfStaff('⚠ Editing invoices is restricted for your account'))return;
+  
   const inv=S.invoices.find(i=>i.id===id);if(!inv)return;
   S.eInvId=id;
   document.getElementById('inv-mt').textContent='Edit Invoice';
@@ -2091,7 +2098,7 @@ function saveAdv(){
   }
   persist();closeM('adv-modal');renderAll();toast('Advance saved ✓');
 }
-function delAdv(id){if(!confirm('Delete?'))return;const a=S.advances.find(x=>x.id===id);S.advances=S.advances.filter(a=>a.id!==id);logHistory('Deleted','Advance',a?(a.ref+' — Customer: '+a.cust+'; Amount: ₹'+V(a.amt).toLocaleString('en-IN')+(a.invNum?'; Invoice: '+a.invNum:'')+(a.mode?'; Mode: '+a.mode:'')+(a.date?'; Date: '+DF(a.date):'')):id);persist();renderAll();toast('Deleted');}
+function delAdv(id){if(blockIfStaff('⚠ Deleting advances is restricted for your account'))return;if(!confirm('Delete?'))return;const a=S.advances.find(x=>x.id===id);S.advances=S.advances.filter(a=>a.id!==id);logHistory('Deleted','Advance',a?(a.ref+' — Customer: '+a.cust+'; Amount: ₹'+V(a.amt).toLocaleString('en-IN')+(a.invNum?'; Invoice: '+a.invNum:'')+(a.mode?'; Mode: '+a.mode:'')+(a.date?'; Date: '+DF(a.date):'')):id);persist();renderAll();toast('Deleted');}
 
 // ── PAYMENTS ──
 function openPayM(id,prefInv){
@@ -2146,7 +2153,7 @@ function savePay(){
   if(invNum){const inv=S.invoices.find(i=>i.number===invNum);if(inv){const bal=invBal(inv);inv.status=bal<=0?'paid':'partial';}}
   persist();closeM('pay-modal');renderAll();toast('Payment saved ✓');
 }
-function delPay(id){if(!confirm('Delete?'))return;const p=S.payments.find(x=>x.id===id);S.payments=S.payments.filter(p=>p.id!==id);logHistory('Deleted','Payment',p?(p.ref+' — Customer: '+p.cust+'; Amount: ₹'+V(p.amt).toLocaleString('en-IN')+(p.invNum?'; Invoice: '+p.invNum:'')+(p.mode?'; Mode: '+p.mode:'')+(p.date?'; Date: '+DF(p.date):'')):id);persist();renderAll();toast('Deleted');}
+function delPay(id){if(blockIfStaff('⚠ Deleting payments is restricted for your account'))return;if(!confirm('Delete?'))return;const p=S.payments.find(x=>x.id===id);S.payments=S.payments.filter(p=>p.id!==id);logHistory('Deleted','Payment',p?(p.ref+' — Customer: '+p.cust+'; Amount: ₹'+V(p.amt).toLocaleString('en-IN')+(p.invNum?'; Invoice: '+p.invNum:'')+(p.mode?'; Mode: '+p.mode:'')+(p.date?'; Date: '+DF(p.date):'')):id);persist();renderAll();toast('Deleted');}
 
 // ── PRODUCTS ──
 function openProdM(id){
@@ -2244,7 +2251,7 @@ function saveCust(){
   logHistory(isNewCust?'Created':'Edited','Customer',name+' — '+custDiff);
   persist();closeM('cust-modal');renderAll();toast('Saved ✓');
 }
-function delCust(id){if(!confirm('Delete?'))return;const c=S.customers.find(x=>x.id===id);S.customers=S.customers.filter(c=>c.id!==id);logHistory('Deleted','Customer',c?(c.name+(c.custId?'; ID: '+c.custId:'')+(c.phone?'; Phone: '+c.phone:'')+(c.gst?'; GSTIN: '+c.gst:'')+(c.email?'; Email: '+c.email:'')):id);persist();renderAll();toast('Deleted');}
+function delCust(id){if(blockIfStaff('⚠ Deleting customers is restricted for your account'))return;if(!confirm('Delete?'))return;const c=S.customers.find(x=>x.id===id);S.customers=S.customers.filter(c=>c.id!==id);logHistory('Deleted','Customer',c?(c.name+(c.custId?'; ID: '+c.custId:'')+(c.phone?'; Phone: '+c.phone:'')+(c.gst?'; GSTIN: '+c.gst:'')+(c.email?'; Email: '+c.email:'')):id);persist();renderAll();toast('Deleted');}
 
 // ── CUSTOMER DETAIL VIEW ──
 function setCustTab(tab,el){
@@ -2660,7 +2667,7 @@ function renderReports(){
   const PIE_COLORS=['#E84393','#1A1A2E','#E8439380','#1A1A2E80','#f59e0b','#10b981','#6366f1','#ef4444'];
 
   // 1. Revenue vs PO spend line/bar combo
-  const revData=periods.map(p=>p.invs.reduce((s,i)=>s+V(i.total),0));
+  const revData=periods.map(p=>p.invs.reduce((s,i)=>s+V(i.grand),0));
   const poData=periods.map(p=>{const pos=(S.purchaseOrders||[]).filter(po=>p.fn({date:po.date}));return pos.reduce((s,po)=>s+V(po.total),0);});
   mkChart('ch-rev-po',{type:'bar',data:{labels:periods.map(p=>p.label),datasets:[
     {label:'Invoice Revenue (₹)',data:revData,backgroundColor:'#1A1A2E',borderRadius:4},
@@ -2803,7 +2810,7 @@ function renderSupTbl(){
       '<td style="color:var(--am)">'+F(sAdv)+'</td>'+
       '<td style="color:var(--gn)">'+F(sPay)+'</td>'+
       '<td style="font-weight:700;color:'+(sBal>0?'var(--rd)':'var(--gn)')+'">'+F(sBal)+'</td>'+
-      '<td><button class="btn bg bsm" onclick="openSupM(\''+s.id+'\')">✏️</button> <button class="btn bg bsm" title="View Ledger" onclick="viewSupLedger(\''+esc(s.name)+'\')">📒</button> <button class="btn bg bsm" onclick="delSup(\''+s.id+'\')">🗑</button></td>'+
+      '<td><button class="btn bg bsm" onclick="openSupM(\''+s.id+'\')">✏️</button> <button class="btn bg bsm" title="View Ledger" onclick="viewSupLedger(\''+esc(s.name)+'\')">📒</button> '+(isStaff()?'':'<button class="btn bg bsm" onclick="delSup(\''+s.id+'\')">🗑</button>')+'</td>'+
       '</tr>';
   }).join('')||'<tr><td colspan="11" style="text-align:center;color:var(--sl)">No suppliers yet. They auto-save when you create a PO.</td></tr>';
 }
@@ -2844,7 +2851,7 @@ function saveSupM(){
   }
   persist();renderSupTbl();refreshSupDL();closeM('sup-modal');toast('✓ Supplier saved');
 }
-function delSup(id){if(!confirm('Delete this supplier?'))return;const s=S.suppliers.find(x=>x.id===id);S.suppliers=S.suppliers.filter(s=>s.id!==id);logHistory('Deleted','Supplier',s?s.name:id);persist();renderSupTbl();refreshSupDL();toast('Deleted');}
+function delSup(id){if(blockIfStaff('⚠ Deleting suppliers is restricted for your account'))return;if(!confirm('Delete this supplier?'))return;const s=S.suppliers.find(x=>x.id===id);S.suppliers=S.suppliers.filter(s=>s.id!==id);logHistory('Deleted','Supplier',s?s.name:id);persist();renderSupTbl();refreshSupDL();toast('Deleted');}
 
 // ── SUPPLIER HELPERS ──
 function upsertSupplier(d){
@@ -3324,7 +3331,7 @@ function renderEmpTbl(){
   ).join(''):'<tr><td colspan="7"><div class="empty"><div class="ei">🧑‍💼</div><p>No staff added yet.</p></div></td></tr>';
 }
 function openNewEmp(){
-  if(blockIfStaff('⚠ Staff management is restricted for your account'))return;
+  
   S.eEmpId=null;
   document.getElementById('emp-mt').textContent='Add Staff';
   ['emp-name','emp-code','emp-mobile','emp-email','emp-dept','emp-desg','emp-doj','emp-uan'].forEach(id=>document.getElementById(id).value='');
@@ -3334,7 +3341,7 @@ function openNewEmp(){
   openM('emp-modal');
 }
 function editEmp(id){
-  if(blockIfStaff('⚠ Staff management is restricted for your account'))return;
+  
   const e=S.employees.find(x=>x.id===id);if(!e)return;
   S.eEmpId=id;
   document.getElementById('emp-mt').textContent='Edit Staff';
@@ -3378,7 +3385,7 @@ function saveEmp(){
   persist();renderEmpTbl();closeM('emp-modal');toast('✓ Staff saved');
 }
 function delEmp(id){
-  if(blockIfStaff('⚠ Staff management is restricted for your account'))return;
+  
   if(!confirm('Delete this staff member?'))return;
   const e=S.employees.find(x=>x.id===id);
   S.employees=S.employees.filter(x=>x.id!==id);
@@ -3882,6 +3889,14 @@ function getOfferItems(){
     return{size:g('size'),cls:g('class'),qty,rate,amt};
   }).filter(it=>it.size||it.qty||it.rate);
 }
+// Canonical label for an offer item: SIZE + CLASS concatenation
+function offerItemLabel(it){
+  if(!it)return '';
+  const s=(it.size||'').toString().trim();
+  const c=(it.cls||it.class||'').toString().trim();
+  if(s&&c)return s+' '+c;
+  return s||c||it.desc||it.description||it.name||'';
+}
 function autoOfferPriceNote(){
   const pt=document.getElementById('offer-pricetype').value;
   const gp=V(document.getElementById('offer-gstpct').value)||18;
@@ -4109,7 +4124,7 @@ function autoCoCust(v){
 }
 function addCORow(it){
   const tr=document.createElement('tr');
-  const desc=it?esc(it.desc||it.description||''):'';
+  const desc=it?esc(offerItemLabel(it)||it.desc||it.description||''):'';
   const hsn=it?esc(it.hsn||''):'';
   const qty=it?V(it.qty):1;
   const unit=it?esc(it.unit||''):'';
@@ -4247,7 +4262,7 @@ function createInvFromCO(id){
   (co.items||[]).forEach(it=>{
     // addItemRow is the existing function from the app
     const gstP=it.gst||co.gstPct||18;
-    addRow({desc:it.desc||it.description||'',hsn:it.hsn||'',qty:it.qty||1,unit:it.unit||'',rate:it.rate||0,disc:0,dtype:'%',gst:gstP});
+    addRow({desc:offerItemLabel(it)||it.desc||it.description||'',hsn:it.hsn||'',qty:it.qty||1,unit:it.unit||'',rate:it.rate||0,disc:0,dtype:'%',gst:gstP});
   });
   recalc();
   // Link invoice back to CO by tagging it with co.id in notes field
@@ -4582,8 +4597,8 @@ function renderInvTbl(){
     '<td style="white-space:nowrap"><button class="btn bg bsm" onclick="prevInv(\''+inv.id+'\')">👁</button> '+(isStaff()?'':'<button class="btn bg bsm" onclick="editInv(\''+inv.id+'\')">✏️</button> <button class="btn bg bsm" onclick="openPayM(null,\''+inv.number+'\')">💳</button> ')+'<button class="btn bg bsm" onclick="dlPDFById(\''+inv.id+'\')">⬇</button> '+(isStaff()?'':'<button class="btn bg bsm" style="color:var(--rd)" onclick="delInv(\''+inv.id+'\')">🗑</button>')+'</td></tr>';
   }).join(''):'<tr><td colspan="11"><div class="empty"><div class="ei">🧾</div><p>No invoices found.</p></div></td></tr>';
 }
-function renderAdvTbl(){document.getElementById('adv-tb').innerHTML=S.advances.length?[...S.advances].reverse().map(a=>'<tr><td style="font-weight:700;color:var(--am)">'+esc(a.ref)+'</td><td>'+esc(a.cust)+'</td><td>'+esc(a.invNum||'—')+'</td><td>'+DF(a.date)+'</td><td style="font-weight:700">'+F(a.amt)+'</td><td>'+esc(a.mode)+'</td><td style="font-size:11px">'+esc(a.ref2||'—')+'</td><td style="font-size:11px">'+esc(a.note||'—')+'</td><td><button class="btn bg bsm" onclick="openAdvM(\''+a.id+'\')">✏️</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delAdv(\''+a.id+'\')">🗑</button></td></tr>').join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">💰</div><p>No advances yet.</p></div></td></tr>';}
-function renderPayTbl(){document.getElementById('pay-tb').innerHTML=S.payments.length?[...S.payments].reverse().map(p=>'<tr><td style="font-weight:700;color:var(--gn)">'+esc(p.ref)+'</td><td>'+esc(p.cust)+'</td><td>'+esc(p.invNum||'—')+'</td><td>'+DF(p.date)+'</td><td style="font-weight:700">'+F(p.amt)+'</td><td>'+esc(p.mode)+'</td><td style="font-size:11px">'+esc(p.ref2||'—')+'</td><td style="font-size:11px">'+esc(p.note||'—')+'</td><td><button class="btn bg bsm" onclick="openPayM(\''+p.id+'\')">✏️</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delPay(\''+p.id+'\')">🗑</button></td></tr>').join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">💳</div><p>No payments yet.</p></div></td></tr>';}
+function renderAdvTbl(){document.getElementById('adv-tb').innerHTML=S.advances.length?[...S.advances].reverse().map(a=>'<tr><td style="font-weight:700;color:var(--am)">'+esc(a.ref)+'</td><td>'+esc(a.cust)+'</td><td>'+esc(a.invNum||'—')+'</td><td>'+DF(a.date)+'</td><td style="font-weight:700">'+F(a.amt)+'</td><td>'+esc(a.mode)+'</td><td style="font-size:11px">'+esc(a.ref2||'—')+'</td><td style="font-size:11px">'+esc(a.note||'—')+'</td><td><button class="btn bg bsm" onclick="openAdvM(\''+a.id+'\')">✏️</button> '+(isStaff()?'':'<button class="btn bg bsm" style="color:var(--rd)" onclick="delAdv(\''+a.id+'\')">🗑</button>')+'</td></tr>').join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">💰</div><p>No advances yet.</p></div></td></tr>';}
+function renderPayTbl(){document.getElementById('pay-tb').innerHTML=S.payments.length?[...S.payments].reverse().map(p=>'<tr><td style="font-weight:700;color:var(--gn)">'+esc(p.ref)+'</td><td>'+esc(p.cust)+'</td><td>'+esc(p.invNum||'—')+'</td><td>'+DF(p.date)+'</td><td style="font-weight:700">'+F(p.amt)+'</td><td>'+esc(p.mode)+'</td><td style="font-size:11px">'+esc(p.ref2||'—')+'</td><td style="font-size:11px">'+esc(p.note||'—')+'</td><td><button class="btn bg bsm" onclick="openPayM(\''+p.id+'\')">✏️</button> '+(isStaff()?'':'<button class="btn bg bsm" style="color:var(--rd)" onclick="delPay(\''+p.id+'\')">🗑</button>')+'</td></tr>').join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">💳</div><p>No payments yet.</p></div></td></tr>';}
 function renderProds(){document.getElementById('prod-tb').innerHTML=S.products.length?S.products.map(p=>'<tr><td style="font-weight:500">'+esc(p.name)+'</td><td>'+esc(p.hsn||'—')+'</td><td>'+p.unit+'</td><td style="font-weight:600">₹'+V(p.rate).toLocaleString('en-IN')+'</td><td>'+p.gst+'%</td><td><button class="btn bg bsm" onclick="openProdM(\''+p.id+'\')">✏️</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delProd(\''+p.id+'\')">🗑</button></td></tr>').join(''):'<tr><td colspan="6"><div class="empty"><div class="ei">📦</div><p>No products yet.</p></div></td></tr>';}
 function renderCusts(){
   document.getElementById('cust-tb').innerHTML=S.customers.length?S.customers.map(c=>{
@@ -4592,7 +4607,7 @@ function renderCusts(){
     const p=S.payments.filter(x=>x.cust===c.name).reduce((s,x)=>s+V(x.amt),0);
     const bal=Math.max(0,b-a-p);
     const projCount=(c.projects||[]).length;
-    return'<tr><td style="font-weight:700;color:var(--rust);font-size:11px">'+esc(c.custId||'—')+'</td><td style="font-weight:500;cursor:pointer;color:var(--rust)" onclick="viewCust(\''+esc(c.name)+'\')">'+esc(c.name)+'</td><td style="font-size:11px">'+esc(c.gst||'—')+'</td><td>'+esc(c.phone||'—')+'</td><td style="font-size:12px">'+esc(c.email||'—')+'</td><td style="text-align:center">'+(projCount||'—')+'</td><td>'+F(b)+'</td><td style="color:var(--am)">'+F(a)+'</td><td style="color:var(--gn)">'+F(p)+'</td><td style="font-weight:700;color:'+(bal>0?'var(--rd)':'var(--gn)')+'">'+F(bal)+'</td><td><button class="btn bg bsm" onclick="viewCust(\''+esc(c.name)+'\')">🔍</button> <button class="btn bg bsm" onclick="openCustM(\''+c.id+'\')">✏️</button> <button class="btn bg bsm" title="Download Statement" onclick="downloadCustStatement(\''+esc(c.name)+'\')">⬇</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delCust(\''+c.id+'\')">🗑</button></td></tr>';
+    return'<tr><td style="font-weight:700;color:var(--rust);font-size:11px">'+esc(c.custId||'—')+'</td><td style="font-weight:500;cursor:pointer;color:var(--rust)" onclick="viewCust(\''+esc(c.name)+'\')">'+esc(c.name)+'</td><td style="font-size:11px">'+esc(c.gst||'—')+'</td><td>'+esc(c.phone||'—')+'</td><td style="font-size:12px">'+esc(c.email||'—')+'</td><td style="text-align:center">'+(projCount||'—')+'</td><td>'+F(b)+'</td><td style="color:var(--am)">'+F(a)+'</td><td style="color:var(--gn)">'+F(p)+'</td><td style="font-weight:700;color:'+(bal>0?'var(--rd)':'var(--gn)')+'">'+F(bal)+'</td><td><button class="btn bg bsm" onclick="viewCust(\''+esc(c.name)+'\')">🔍</button> <button class="btn bg bsm" onclick="openCustM(\''+c.id+'\')">✏️</button> <button class="btn bg bsm" title="Download Statement" onclick="downloadCustStatement(\''+esc(c.name)+'\')">⬇</button> '+(isStaff()?'':'<button class="btn bg bsm" style="color:var(--rd)" onclick="delCust(\''+c.id+'\')">🗑</button>')+'</td></tr>';
   }).join(''):'<tr><td colspan="11"><div class="empty"><div class="ei">👥</div><p>No customers yet.</p></div></td></tr>';
 }
 function viewCust(name){
@@ -4635,14 +4650,14 @@ function renderSupAdvTbl(){
   const tb=document.getElementById('sup-adv-tb');if(!tb)return;
   tb.innerHTML=(S.supAdvances||[]).length?[...(S.supAdvances||[])].reverse().map(a=>
     '<tr><td style="font-weight:700;color:var(--am)">'+esc(a.ref)+'</td><td>'+esc(a.sup)+'</td><td>'+esc(a.poNo||'—')+'</td><td>'+DF(a.date)+'</td><td style="font-weight:700">'+F(a.amt)+'</td><td>'+esc(a.mode)+'</td><td style="font-size:11px">'+esc(a.ref2||'—')+'</td><td style="font-size:11px">'+esc(a.note||'—')+'</td>'+
-    '<td><button class="btn bg bsm" onclick="openSupAdvM(\''+a.id+'\')">✏️</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delSupAdv(\''+a.id+'\')">🗑</button></td></tr>'
+    '<td><button class="btn bg bsm" onclick="openSupAdvM(\''+a.id+'\')">✏️</button> '+(isStaff()?'':'<button class="btn bg bsm" style="color:var(--rd)" onclick="delSupAdv(\''+a.id+'\')">🗑</button>')+'</td></tr>'
   ).join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">🏦</div><p>No supplier advances yet.</p></div></td></tr>';
 }
 function renderSupPayTbl(){
   const tb=document.getElementById('sup-pay-tb');if(!tb)return;
   tb.innerHTML=(S.supPayments||[]).length?[...(S.supPayments||[])].reverse().map(p=>
     '<tr><td style="font-weight:700;color:var(--gn)">'+esc(p.ref)+'</td><td>'+esc(p.sup)+'</td><td>'+esc(p.poNo||'—')+'</td><td>'+DF(p.date)+'</td><td style="font-weight:700">'+F(p.amt)+'</td><td>'+esc(p.mode)+'</td><td style="font-size:11px">'+esc(p.ref2||'—')+'</td><td style="font-size:11px">'+esc(p.note||'—')+'</td>'+
-    '<td><button class="btn bg bsm" onclick="openSupPayM(\''+p.id+'\')">✏️</button> <button class="btn bg bsm" style="color:var(--rd)" onclick="delSupPay(\''+p.id+'\')">🗑</button></td></tr>'
+    '<td><button class="btn bg bsm" onclick="openSupPayM(\''+p.id+'\')">✏️</button> '+(isStaff()?'':'<button class="btn bg bsm" style="color:var(--rd)" onclick="delSupPay(\''+p.id+'\')">🗑</button>')+'</td></tr>'
   ).join(''):'<tr><td colspan="9"><div class="empty"><div class="ei">💸</div><p>No supplier payments yet.</p></div></td></tr>';
 }
 function populatePOsForSup(poSelId,supSelId){
@@ -4690,7 +4705,7 @@ function saveSupAdv(){
   else{S.supAdvances.push({id:uid(),...d});S.nextSupAdv=(S.nextSupAdv||1)+1;}
   persist();renderSupAdvTbl();closeM('sup-adv-modal');toast('✓ Supplier advance saved');
 }
-function delSupAdv(id){if(!confirm('Delete this supplier advance?'))return;S.supAdvances=(S.supAdvances||[]).filter(x=>x.id!==id);persist();renderSupAdvTbl();toast('Deleted');}
+function delSupAdv(id){if(blockIfStaff('⚠ Deleting supplier advances is restricted for your account'))return;if(!confirm('Delete this supplier advance?'))return;S.supAdvances=(S.supAdvances||[]).filter(x=>x.id!==id);persist();renderSupAdvTbl();toast('Deleted');}
 
 function openSupPayM(id){
   S.eSupPayId=id||null;
@@ -4726,7 +4741,7 @@ function saveSupPay(){
   else{S.supPayments.push({id:uid(),...d});S.nextSupPay=(S.nextSupPay||1)+1;}
   persist();renderSupPayTbl();closeM('sup-pay-modal');toast('✓ Supplier payment saved');
 }
-function delSupPay(id){if(!confirm('Delete this supplier payment?'))return;S.supPayments=(S.supPayments||[]).filter(x=>x.id!==id);persist();renderSupPayTbl();toast('Deleted');}
+function delSupPay(id){if(blockIfStaff('⚠ Deleting supplier payments is restricted for your account'))return;if(!confirm('Delete this supplier payment?'))return;S.supPayments=(S.supPayments||[]).filter(x=>x.id!==id);persist();renderSupPayTbl();toast('Deleted');}
 
 function renderSupLedger(supName){
   const body=document.getElementById('sup-ledger-body');if(!body)return;
@@ -4789,22 +4804,21 @@ function renderBundleList(){
     return;
   }
   // summary stats
-  const totalOffer=bundles.reduce((s,b)=>{const o=(S.offers||[]).find(x=>x.id===b.offerId);return s+(o?V(o.grandTotal||o.total||0):0);},0);
+  const totalOffer=bundles.reduce((s,b)=>{const o=(S.offers||[]).find(x=>x.id===b.offerId);return s+(o?V(o.total):0);},0);
   const totalPO=bundles.reduce((s,b)=>s+(b.poIds||[]).reduce((t,pid)=>{const p=(S.purchaseOrders||[]).find(x=>x.id===pid);return t+V(p?p.total:0);},0),0);
-  const totalInv=bundles.reduce((s,b)=>s+(b.invIds||[]).reduce((t,iid)=>{const i=(S.invoices||[]).find(x=>x.id===iid);return t+V(i?i.total||i.grandTotal||i.amount:0);},0),0);
+  const totalInv=bundles.reduce((s,b)=>s+(b.invIds||[]).reduce((t,iid)=>{const i=(S.invoices||[]).find(x=>x.id===iid);return t+V(i?i.grand:0);},0),0);
   body.innerHTML=`<div class="sg3" style="margin-bottom:16px">
     <div class="sc gacc"><div class="sc-l">Total Offer Value</div><div class="sc-v">${F(totalOffer)}</div><div class="sc-s">${bundles.length} bundles</div></div>
     <div class="sc acc"><div class="sc-l">Total PO Value</div><div class="sc-v">${F(totalPO)}</div><div class="sc-s">across all bundles</div></div>
     <div class="sc"><div class="sc-l">Total Invoiced</div><div class="sc-v">${F(totalInv)}</div><div class="sc-s">across all bundles</div></div>
-  </div>`+
-  bundles.slice().reverse().map(b=>bundleCard(b)).join('');
+  </div>${bundles.slice().reverse().map(b=>bundleCard(b)).join('')}`;
 }
 
 function bundleCard(b){
   const offer=(S.offers||[]).find(x=>x.id===b.offerId);
   const pos=(b.poIds||[]).map(pid=>(S.purchaseOrders||[]).find(x=>x.id===pid)).filter(Boolean);
   const invs=(b.invIds||[]).map(iid=>(S.invoices||[]).find(x=>x.id===iid)).filter(Boolean);
-  const offerVal=offer?V(offer.grandTotal||offer.total||offer.grand||0):0;
+  const offerVal=offer?V(offer.total):0;
   const poVal=pos.reduce((s,p)=>s+V(p.total),0);
   const invVal=invs.reduce((s,i)=>s+V(i.grand),0);
   const supAdvs=(b.poIds||[]).reduce((s,pid)=>{
@@ -4843,7 +4857,7 @@ function bundleCard(b){
       </div>
       <div style="padding:10px 14px;border-right:1px solid var(--br)">
         <div style="font-size:10px;color:var(--sl);font-weight:700;letter-spacing:.05em">INVOICES (${invs.length})</div>
-        ${invs.length?invs.map(i=>'<div style="font-size:12px;font-weight:600;margin-top:3px">'+esc(i.number)+' <span style="color:var(--sl);font-weight:400">'+esc(i.bname||'')+'</span> <span style="float:right">'+F(i.total||i.grandTotal||i.amount)+'</span></div>').join(''):'<div style="color:var(--sl);font-size:11px;margin-top:4px">None linked</div>'}
+        ${invs.length?invs.map(i=>'<div style="font-size:12px;font-weight:600;margin-top:3px">'+esc(i.number)+' <span style="color:var(--sl);font-weight:400">'+esc(i.bname||'')+'</span> <span style="float:right">'+F(i.grand)+'</span></div>').join(''):'<div style="color:var(--sl);font-size:11px;margin-top:4px">None linked</div>'}
         ${invs.length?'<div style="font-size:11px;color:var(--gn);margin-top:4px">Total: '+F(invVal)+'</div>':''}
       </div>
       <div style="padding:10px 14px">
@@ -4886,7 +4900,7 @@ function initBundleForm(bundleId){
     ?'<div style="display:flex;flex-wrap:wrap;gap:8px;width:100%">'+(S.invoices||[]).map(inv=>
         `<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:5px 10px;border:1px solid var(--br);border-radius:5px;background:${selInvs.has(inv.id)?'var(--bp)':'var(--cc)'};color:${selInvs.has(inv.id)?'#fff':'inherit'}">
           <input type="checkbox" value="${esc(inv.id)}" ${selInvs.has(inv.id)?'checked':''} onchange="toggleBundleCheck(this,'inv')" style="display:none">
-          🧾 ${esc(inv.number)} <span style="opacity:.7">${esc(inv.bname||'')}</span> · ${F(inv.total||inv.grandTotal||inv.amount)}
+          🧾 ${esc(inv.number)} <span style="opacity:.7">${esc(inv.bname||'')}</span> · ${F(inv.grand)}
         </label>`
       ).join('')+'</div>'
     :'<span style="color:var(--sl);font-size:12px">No invoices available</span>';
@@ -4945,7 +4959,7 @@ function renderBundleDetail(id){
   const totCustBal=invVal-totCustReceived;
 
   // Offer value
-  const offerVal=offer?V(offer.grandTotal||offer.total||offer.grand||0):0;
+  const offerVal=offer?V(offer.total):0;
 
   // PO financials
   const poVal=pos.reduce((s,p)=>s+V(p.total),0);
@@ -5059,9 +5073,9 @@ function renderBundleDetail(id){
         <div><div style="font-size:10px;color:var(--sl);font-weight:700">OFFER VALUE</div><div style="font-weight:700;font-size:14px;color:var(--gn)">${F(offerVal)}</div></div>
         ${offer.status?'<div><div style="font-size:10px;color:var(--sl);font-weight:700">STATUS</div><div><span class="badge b'+offer.status+'">'+esc(offer.status)+'</span></div></div>':''}
       </div>
-      ${(offer.items||[]).length?`<div class="tw"><table><thead><tr><th>#</th><th>Item / Description</th><th>Qty</th><th>Unit</th><th>Rate</th><th>Amount</th></tr></thead><tbody>
-        ${(offer.items||[]).map((it,idx)=>'<tr><td style="color:var(--sl)">'+(idx+1)+'</td><td style="font-weight:600">'+esc(it.name||it.desc||it.item||'')+'</td><td>'+esc(it.qty)+'</td><td>'+esc(it.unit||'—')+'</td><td>'+F(it.rate||it.price||it.unitPrice)+'</td><td style="font-weight:700">'+F(it.total||it.amount||((it.qty||0)*(it.rate||it.price||0)))+'</td></tr>').join('')}
-        <tr style="border-top:2px solid var(--br);font-weight:700"><td colspan="5" style="text-align:right;font-size:12px;color:var(--sl)">OFFER TOTAL</td><td style="color:var(--gn);font-size:14px">${F(offerVal)}</td></tr>
+      ${(offer.items||[]).length?`<div class="tw"><table><thead><tr><th>#</th><th>Item (Size + Class)</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody>
+        ${(offer.items||[]).map((it,idx)=>'<tr><td style="color:var(--sl)">'+(idx+1)+'</td><td style="font-weight:600">'+esc(offerItemLabel(it))+'</td><td>'+esc(it.qty)+'</td><td>'+F(it.rate)+'</td><td style="font-weight:700">'+F(it.amt)+'</td></tr>').join('')}
+        <tr style="border-top:2px solid var(--br);font-weight:700"><td colspan="4" style="text-align:right;font-size:12px;color:var(--sl)">OFFER TOTAL</td><td style="color:var(--gn);font-size:14px">${F(offerVal)}</td></tr>
       </tbody></table></div>`:'<div style="color:var(--sl);font-size:12px;padding:4px 0">No line items recorded.</div>'}
     </div>`:'<div style="padding:12px 16px;color:var(--sl);font-size:12px">No offer linked to this bundle.</div>'}
   </div>
