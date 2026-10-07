@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -4333,14 +4331,41 @@ function downloadHistory(){
   URL.revokeObjectURL(url);
   toast('History downloaded ✓');
 }
+// Offer preview pagination — same 155px header / 155px footer rule as the PDF export
+function applyOfferPageBreaks(root){
+  if(!root)return;
+  const PAGE_H=1122,HEAD=155,FOOT=135;
+  root.querySelectorAll('tbody tr, .pb-guard, p').forEach(el=>{
+    const r0=root.getBoundingClientRect(),r=el.getBoundingClientRect();
+    const top=r.top-r0.top,h=r.height;
+    if(h===0||h>PAGE_H-HEAD-FOOT)return;
+    const pg=Math.floor(top/PAGE_H);
+    const safeBottom=pg*PAGE_H+PAGE_H-(el.classList.contains('pb-guard')?30:FOOT);
+    let gap=0;
+    if(top+h>safeBottom-2) gap=(pg+1)*PAGE_H+HEAD-top;
+    else if(pg>0 && top-pg*PAGE_H<HEAD) gap=pg*PAGE_H+HEAD-top;
+    if(gap>0){
+      if(el.tagName==='TR'){
+        const sp=document.createElement('tr');
+        sp.innerHTML='<td colspan="9" style="border:0;padding:0;height:'+gap+'px"></td>';
+        el.parentNode.insertBefore(sp,el);
+      }else{
+        const sp=document.createElement('div');
+        sp.style.height=gap+'px';
+        el.parentNode.insertBefore(sp,el);
+      }
+    }
+  });
+}
 function prevOffer(id){
   S.curOfferPrev=id;
   const o=S.offers.find(x=>x.id===id);
   document.getElementById('offer-prev-body').innerHTML=buildOfferPDF(o);
-  applyPageBreaks(document.getElementById('offer-prev-body').firstElementChild);
   const cust=S.customers.find(c=>c.name===o.custName);
   document.getElementById('offer-email-btn').style.display=(o.custEmail||(cust&&cust.email))?'inline-flex':'none';
   openM('offer-prev-modal');
+  // must run after the modal is visible, otherwise every element measures 0px
+  applyOfferPageBreaks(document.getElementById('offer-prev-body').firstElementChild);
 }
 // ── PAGE-BREAK HELPER (keeps content off the decorative letterhead footer) ──
 // Builders mark their tail section (notes/signature) with class="pb-guard" and
@@ -4353,16 +4378,47 @@ function prevOffer(id){
 function applyPageBreaks(root){
   if(!root)return;
   const PAGE_H=1122;
+  const HEADER_H=165; // letterhead header on every page
+  const FOOTER_H=260; // unsafe zone before page bottom (letterhead footer)
+
+  // 1. Protect table rows — push any row that straddles the unsafe bottom zone to next page
+  root.querySelectorAll('table tbody tr').forEach(row=>{
+    const top=row.offsetTop;
+    const h=row.offsetHeight;
+    const pageIdx=Math.floor(top/PAGE_H);
+    const pageBottomSafe=(pageIdx+1)*PAGE_H-FOOTER_H;
+    // Row starts before safe line but ends after it → push entire row to next page
+    if(top<pageBottomSafe && (top+h)>pageBottomSafe){
+      const nextPageTop=(pageIdx+1)*PAGE_H+HEADER_H;
+      const spacer=document.createElement('div');
+      spacer.style.height=Math.max(0,nextPageTop-top)+'px';
+      row.parentNode.insertBefore(spacer,row);
+    }
+    // Row starts in the header zone of page 2+ → push it below the header
+    const rowPageStart=Math.floor(top/PAGE_H);
+    const pageStart=rowPageStart*PAGE_H;
+    if(rowPageStart>0 && (top-pageStart)<HEADER_H){
+      const spacer=document.createElement('div');
+      spacer.style.height=Math.max(0,pageStart+HEADER_H-top)+'px';
+      row.parentNode.insertBefore(spacer,row);
+    }
+  });
+
+  // 2. Protect pb-guard blocks (notes + signature section)
   root.querySelectorAll('.pb-guard').forEach(el=>{
-    const safeBottom=parseFloat(el.dataset.pbSafe)||190;
-    const contTop=parseFloat(el.dataset.pbCont)||152;
+    const safeBottom=parseFloat(el.dataset.pbSafe)||FOOTER_H;
+    const contTop=parseFloat(el.dataset.pbCont)||HEADER_H;
     const top=el.offsetTop,h=el.offsetHeight;
     const pageIdx=Math.floor(top/PAGE_H);
     const pageBottomSafe=(pageIdx+1)*PAGE_H-safeBottom;
-    if(top<pageBottomSafe && (top+h)>pageBottomSafe){
+    if((top+h)>pageBottomSafe){
       const nextPageTop=(pageIdx+1)*PAGE_H+contTop;
       const spacer=document.createElement('div');
       spacer.style.height=Math.max(0,nextPageTop-top)+'px';
+      el.parentNode.insertBefore(spacer,el);
+    } else if(pageIdx>0 && (top-pageIdx*PAGE_H)<contTop){
+      const spacer=document.createElement('div');
+      spacer.style.height=(pageIdx*PAGE_H+contTop-top)+'px';
       el.parentNode.insertBefore(spacer,el);
     }
   });
@@ -4459,8 +4515,8 @@ function buildOfferPDF(o){
       (o.offerValid?'<p style="margin:4px 0;font-size:'+fs+'px"><b>Offer Validity</b> : Offer valid till '+esc(o.offerValid)+' for acceptance &amp; Placement of Order.</p>':'')+
     '</div>'):'';
   const stampHtml=o.useStamp?
-    '<img src="'+STAMP_B64+'" style="width:170px;display:block;margin:2px 0 0 auto"><div style="text-align:right;font-size:'+(fs-1)+'px;font-weight:bold;margin-top:2px">Authorised Signatory - '+esc(C.name)+'</div>':
-    '<div style="border-top:1px solid #555;width:150px;margin:38px 0 4px auto"></div><div style="text-align:right"><b>'+esc(C.offersign||'Authorised Signatory')+'</b></div>';
+    '<img src="'+STAMP_B64+'" style="width:170px;height:111px;display:block;margin:2px 0 0 auto"><div style="text-align:right;font-size:'+(fs-1)+'px;font-weight:bold;margin-top:2px">Authorised Signatory - '+esc(C.name)+'</div>':
+    '<div style="border-top:1px solid #555;width:150px;margin:26px 0 4px auto"></div><div style="text-align:right"><b>'+esc(C.offersign||'Authorised Signatory')+'</b></div>';
 
   const partA=`
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
@@ -4497,39 +4553,86 @@ function buildOfferPDF(o){
       ${validityHtml}
       ${extraNotesHtml?`<div style="margin-top:10px">${extraNotesHtml}</div>`:''}
 
-      <div style="display:flex;justify-content:flex-end;padding:20px 16px 0">
+      <div class="pb-guard" data-pb-safe="140" data-pb-cont="165" style="display:flex;justify-content:flex-end;padding:6px 16px 0">
         <div style="text-align:right;font-size:${fs}px">
           <div>For <b>${esc(C.name)}</b></div>
           ${stampHtml}
         </div>
       </div>
   `;
+  // Preview: single scrollable wrapper with background-repeat (visual only, not used for PDF)
+  const allContent=partA+partB;
+  buildOfferPDF._lastContent=allContent;
+  buildOfferPDF._lastFS=fs;
   return `<div style="position:relative;width:794px;min-height:1122px;font-family:Arial,Helvetica,sans-serif;font-size:${fs}px;color:#000;box-sizing:border-box;background-image:url(${OFFER_LH_B64});background-repeat:repeat-y;background-size:794px 1122px;background-position:top left">
     <div style="position:relative;z-index:1;padding-top:152px;padding-left:28px;padding-right:28px;padding-bottom:80px">
-      ${partA}
-      <div class="pb-guard" data-pb-safe="190" data-pb-cont="152">${partB}</div>
+      ${allContent}
     </div>
   </div>`;
 }
 async function renderOfferToPDF(o){
   const zone=document.getElementById('pzone');
-  zone.innerHTML=buildOfferPDF(o);
-  zone.style.cssText='position:fixed;left:0;top:0;width:794px;background:#fff;z-index:9999;pointer-events:none';
-  // Force 794px viewport so mobile doesn't reflow the layout
   const vp=document.querySelector('meta[name="viewport"]');
   const vpOrig=vp?vp.content:'';
   if(vp)vp.content='width=794';
-  await new Promise(r=>setTimeout(r,500));
-  const el=zone.firstElementChild;
-  applyPageBreaks(el);
-  const canvas=await html2canvas(el,{scale:3,useCORS:true,backgroundColor:'#fff',logging:false,width:794,windowWidth:794,scrollX:0,scrollY:0});
-  zone.innerHTML='';zone.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
-  if(vp)vp.content=vpOrig;
+  zone.style.cssText='position:fixed;left:0;top:0;width:794px;background:#fff;z-index:9999;pointer-events:none';
+
+  const PAGE_H=1122, HEADER=155, FOOTER=135, CONTENT_H=PAGE_H-HEADER-FOOTER;
+  const fs=V(o.fontSize)||11;
+
+  // Step 1: build content (also stores in _lastContent)
+  buildOfferPDF(o);
+  const content=buildOfferPDF._lastContent||'';
+
+  // Step 2: measure full content height (no letterhead, no clipping)
+  zone.innerHTML='<div id="omeasure" style="width:738px;font-family:Arial,Helvetica,sans-serif;font-size:'+fs+'px;color:#000;padding:0;margin:0">'+content+'</div>';
+  await new Promise(r=>setTimeout(r,400));
+  const GEXTRA=105; let extraUsed=0;
+  {
+    const m=document.getElementById('omeasure');
+    m.style.position='relative';
+    m.querySelectorAll('tbody tr, .pb-guard, p').forEach(el=>{
+      const mr=m.getBoundingClientRect(), r=el.getBoundingClientRect();
+      const top=r.top-mr.top, h=r.height;
+      if(h>=CONTENT_H||h===0)return;
+      const cut=(Math.floor(top/CONTENT_H)+1)*CONTENT_H;
+      const isG=el.classList.contains('pb-guard');
+      if(isG && top+h>cut-2 && top+h<=cut+GEXTRA){ extraUsed=Math.max(extraUsed,top+h-cut); return; }
+      if(top+h>cut-2){
+        const gap=cut-top+2;
+        if(el.tagName==='TR'){
+          const sp=document.createElement('tr');
+          sp.innerHTML='<td colspan="9" style="border:0;padding:0;height:'+gap+'px"></td>';
+          el.parentNode.insertBefore(sp,el);
+        }else{
+          const sp=document.createElement('div');
+          sp.style.height=gap+'px';
+          el.parentNode.insertBefore(sp,el);
+        }
+      }
+    });
+  }
+  const contentPaged=document.getElementById('omeasure').innerHTML;
+  const totalH=document.getElementById('omeasure').scrollHeight;
+  const numPages=Math.max(1,Math.ceil((totalH-extraUsed)/CONTENT_H));
+
+  // Step 3: render each page as its own 1122px div with letterhead bg
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
-  const PW=pdf.internal.pageSize.getWidth(),PH=pdf.internal.pageSize.getHeight();
-  const imgH=(canvas.height/canvas.width)*PW;
-  paintPDFPage(pdf,canvas,PW,PH,imgH);
+  const PW=pdf.internal.pageSize.getWidth(), PH=pdf.internal.pageSize.getHeight();
+
+  for(let p=0;p<numPages;p++){
+    zone.innerHTML='<div style="position:relative;width:794px;height:'+PAGE_H+'px;background-image:url('+OFFER_LH_B64+');background-size:794px '+PAGE_H+'px;background-repeat:no-repeat;background-position:top left;overflow:hidden"><div style="position:absolute;top:'+HEADER+'px;left:28px;right:28px;height:'+(CONTENT_H+(p===numPages-1?extraUsed:0))+'px;overflow:hidden"><div style="position:relative;top:'+(-p*CONTENT_H)+'px;width:100%;font-family:Arial,Helvetica,sans-serif;font-size:'+fs+'px;color:#000">'+contentPaged+'</div></div></div>';
+    await new Promise(r=>setTimeout(r,300));
+    const el=zone.firstElementChild;
+    const canvas=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,width:794,height:PAGE_H,windowWidth:794,scrollX:0,scrollY:0});
+    if(p>0)pdf.addPage();
+    pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,PW,PH);
+  }
+
+  zone.innerHTML='';
+  zone.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1';
+  if(vp)vp.content=vpOrig;
   return pdf;
 }
 async function dlOfferPDF(){
