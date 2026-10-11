@@ -323,6 +323,7 @@ input[readonly]{background:#F9F8F6;color:var(--sl);cursor:default}
     <div class="ni" onclick="go('po')"><span class="ic">📑</span>Purchase Orders</div>
     <div class="ni" onclick="go('suppayments')"><span class="ic">🏦</span>Supplier Payments</div>
     <div class="ni" onclick="go('offers')"><span class="ic">📨</span>Offers</div>
+    <div class="ni" onclick="go('confirmed')"><span class="ic">✅</span>Confirmed Orders</div>
     <div class="ni" onclick="go('linkage')"><span class="ic">🔗</span>Linkage</div>
     <div class="ni" onclick="go('calldiary')"><span class="ic">📞</span>Call Diary</div>
     <div class="ni" onclick="go('staff')"><span class="ic">🧑‍💼</span>Staff</div>
@@ -1613,13 +1614,13 @@ function custByAny(val){
 }
 
 // ── NAVIGATION ──
-const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','suppayments','linkage','offers','calldiary','staff','history','settings'];
-const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',suppayments:'Supplier Payments',linkage:'Document Linkage',offers:'Offers',calldiary:'Call Diary',staff:'Staff',history:'Activity History',settings:'Settings'};
+const PAGES=['dashboard','invoices','advances','payments','products','customers','suppliers','reports','po','suppayments','linkage','offers','confirmed','calldiary','staff','history','settings'];
+const PTITLE={dashboard:'Dashboard',invoices:'Invoices',advances:'Advances',payments:'Payments',products:'Products',customers:'Customers',suppliers:'Suppliers',reports:'Reports',po:'Purchase Orders',suppayments:'Supplier Payments',linkage:'Document Linkage',offers:'Offers',confirmed:'Confirmed Orders',calldiary:'Call Diary',staff:'Staff',history:'Activity History',settings:'Settings'};
 const TOP_BTN_MAP={
   dashboard:null, invoices:['＋ New Invoice','openNewInv'],
   advances:['＋ Record Advance','openAdvM'], payments:['＋ Record Payment','openPayM'],
   products:['＋ Add Product','openProdM'], customers:['＋ Add Customer','openCustM'],
-  po:['＋ New Purchase Order','openNewPO'], offers:['＋ New Offer','openNewOffer'],
+  po:['＋ New Purchase Order','openNewPO'], offers:['＋ New Offer','openNewOffer'], confirmed:['＋ New Confirmed Order','openNewConfirmed'],
   suppayments:null, linkage:null,
   reports:null, settings:null
 };
@@ -2786,7 +2787,7 @@ function renderReports(){
 }
 
 // ── RENDER ALL ──
-function renderAll(){renderDash();renderInvTbl();renderAdvTbl();renderPayTbl();renderProds();renderCusts();renderSupTbl();renderPOTbl();renderOfferTbl();renderSupAdvTbl();renderSupPayTbl();}
+function renderAll(){renderDash();renderInvTbl();renderAdvTbl();renderPayTbl();renderProds();renderCusts();renderSupTbl();renderPOTbl();renderOfferTbl();renderConfirmedTbl();renderSupAdvTbl();renderSupPayTbl();}
 
 // ── SUPPLIERS PAGE ──
 function renderSupTbl(){
